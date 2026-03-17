@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+  src: url('/assets/fonts/PlayfairDisplay.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'General Sans';
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/assets/fonts/GeneralSans.woff2') format('woff2');
+}
+
+@layer base {
+  :root {
+    --radius: 0rem;
+    --background: 0.97 0.008 75;
+    --foreground: 0.18 0.02 60;
+    --card: 0.96 0.006 75;
+    --card-foreground: 0.18 0.02 60;
+    --popover: 0.97 0.008 75;
+    --popover-foreground: 0.18 0.02 60;
+    --primary: 0.22 0.025 55;
+    --primary-foreground: 0.97 0.008 75;
+    --secondary: 0.88 0.015 75;
+    --secondary-foreground: 0.22 0.025 55;
+    --muted: 0.92 0.01 70;
+    --muted-foreground: 0.52 0.018 65;
+    --accent: 0.72 0.04 65;
+    --accent-foreground: 0.18 0.02 60;
+    --destructive: 0.55 0.22 27;
+    --destructive-foreground: 0.97 0 0;
+    --border: 0.88 0.012 70;
+    --input: 0.88 0.012 70;
+    --ring: 0.22 0.025 55;
+    --chart-1: 0.65 0.12 60;
+    --chart-2: 0.58 0.1 75;
+    --chart-3: 0.72 0.08 50;
+    --chart-4: 0.48 0.14 45;
+    --chart-5: 0.82 0.06 80;
+    --sidebar: 0.97 0.008 75;
+    --sidebar-foreground: 0.18 0.02 60;
+    --sidebar-primary: 0.22 0.025 55;
+    --sidebar-primary-foreground: 0.97 0.008 75;
+    --sidebar-accent: 0.92 0.01 70;
+    --sidebar-accent-foreground: 0.22 0.025 55;
+    --sidebar-border: 0.88 0.012 70;
+    --sidebar-ring: 0.22 0.025 55;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'General Sans', 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+.font-display {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-sans-body {
+  font-family: 'General Sans', 'Inter', sans-serif;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
