@@ -396,32 +396,53 @@ export default function Admin({ onNavigate }: AdminProps) {
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
+  const totalRevenue = bookings
+    .filter((b) => b.status !== "cancelled")
+    .reduce((sum, b) => sum + b.totalRental + b.totalDeposit, 0);
+  const activeRentals = bookings.filter(
+    (b) => b.status === "active" || b.status === "upcoming",
+  ).length;
+  const now = new Date();
+  const thisMonthBookings = bookings.filter((b) => {
+    const d = new Date(b.createdAt);
+    return (
+      d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    );
+  });
+  const thisMonthRevenue = thisMonthBookings
+    .filter((b) => b.status !== "cancelled")
+    .reduce((sum, b) => sum + b.totalRental + b.totalDeposit, 0);
+
   const stats = [
     {
       label: "Total Revenue",
-      value: "\u20b94,28,500",
-      change: "+12%",
+      value:
+        totalRevenue === 0 ? "₹0" : `₹${totalRevenue.toLocaleString("en-IN")}`,
+      change:
+        thisMonthRevenue > 0
+          ? `+₹${thisMonthRevenue.toLocaleString("en-IN")} this month`
+          : "No revenue this month",
       icon: BarChart3,
       color: "bg-green-50 text-green-700",
     },
     {
       label: "Active Rentals",
-      value: "34",
-      change: "+5",
+      value: String(activeRentals),
+      change: activeRentals > 0 ? `${activeRentals} ongoing` : "None ongoing",
       icon: ShoppingBag,
       color: "bg-blue-50 text-blue-700",
     },
     {
       label: "Total Products",
       value: String(adminProducts.length),
-      change: "+2",
+      change: `${adminProducts.length} total`,
       icon: Package,
       color: "bg-purple-50 text-purple-700",
     },
     {
       label: "Registered Users",
       value: String(registeredUsers.length),
-      change: `+${registeredUsers.length}`,
+      change: `${registeredUsers.length} registered`,
       icon: Users,
       color: "bg-amber-50 text-amber-700",
     },
@@ -511,9 +532,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                     {stat.value}
                   </p>
                   <p className="text-sm text-gray-500">{stat.label}</p>
-                  <p className="text-xs text-green-600 mt-1">
-                    {stat.change} this month
-                  </p>
+                  <p className="text-xs text-green-600 mt-1">{stat.change}</p>
                 </div>
               ))}
             </div>
