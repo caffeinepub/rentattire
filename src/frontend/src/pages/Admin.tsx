@@ -319,7 +319,7 @@ export default function Admin({ onNavigate }: AdminProps) {
   // ── CSV Export helpers ────────────────────────────────────────────────────
   function exportUsers() {
     exportToCSV(
-      "rentattire-users",
+      "radhey-radhey-users",
       ["Name", "Email", "Role", "Logins", "Last Login"],
       registeredUsers.map((u) => [
         u.name,
@@ -334,7 +334,7 @@ export default function Admin({ onNavigate }: AdminProps) {
 
   function exportBookings() {
     exportToCSV(
-      "rentattire-bookings",
+      "radhey-radhey-bookings",
       ["Booking ID", "Items", "Amount (\u20b9)", "Date", "Status"],
       bookings.map((b) => [
         b.id,
@@ -349,7 +349,7 @@ export default function Admin({ onNavigate }: AdminProps) {
 
   function exportProducts() {
     exportToCSV(
-      "rentattire-products",
+      "radhey-radhey-products",
       ["ID", "Name", "Category", "Price/Day", "Rating", "Available"],
       adminProducts.map((p) => [
         p.id,
@@ -365,7 +365,7 @@ export default function Admin({ onNavigate }: AdminProps) {
 
   function exportCoupons() {
     exportToCSV(
-      "rentattire-coupons",
+      "radhey-radhey-coupons",
       ["Code", "Type", "Value", "Uses", "Max Uses", "Status"],
       adminCoupons.map((c) => [
         c.code,
@@ -464,7 +464,9 @@ export default function Admin({ onNavigate }: AdminProps) {
             <BarChart3 size={16} />
           </div>
           <div>
-            <p className="font-semibold">RentAttire Admin</p>
+            <p className="font-semibold">
+              Radhey Radhey Unique Collection Admin
+            </p>
             <p className="text-xs text-black">Management Dashboard</p>
           </div>
         </div>

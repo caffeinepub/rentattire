@@ -149,7 +149,6 @@ export default function Home({ onNavigate }: HomeProps) {
   const [heroIdx, setHeroIdx] = useState(0);
   const [prevIdx, setPrevIdx] = useState<number | null>(null);
   const [entryDone, setEntryDone] = useState(false);
-  const [musicPlaying, setMusicPlaying] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -157,7 +156,6 @@ export default function Home({ onNavigate }: HomeProps) {
     message: "",
   });
   const [formSent, setFormSent] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const mouse = useMouse();
 
@@ -185,20 +183,6 @@ export default function Home({ onNavigate }: HomeProps) {
     return () => clearTimeout(t);
   }, []);
 
-  const toggleMusic = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (musicPlaying) {
-      audio.pause();
-      setMusicPlaying(false);
-    } else {
-      audio
-        .play()
-        .then(() => setMusicPlaying(true))
-        .catch(() => {});
-    }
-  }, [musicPlaying]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormSent(true);
@@ -211,15 +195,6 @@ export default function Home({ onNavigate }: HomeProps) {
       className="min-h-screen overflow-x-hidden"
       style={{ background: "#0d0d2b" }}
     >
-      {/* Ambient audio */}
-      {/* biome-ignore lint/a11y/useMediaCaption: ambient music only */}
-      <audio
-        ref={audioRef}
-        loop
-        preload="none"
-        src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"
-      />
-
       {/* Floating CSS petals */}
       <FloatingPetals />
 
@@ -318,26 +293,6 @@ export default function Home({ onNavigate }: HomeProps) {
           ))}
         </motion.div>
 
-        {/* Music toggle */}
-        <motion.button
-          type="button"
-          onClick={toggleMusic}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 2.8 }}
-          className="absolute top-5 right-5 z-20 w-11 h-11 rounded-full flex items-center justify-center text-lg"
-          style={{
-            background: "rgba(13,13,43,0.6)",
-            border: "1px solid rgba(212,175,55,0.5)",
-            backdropFilter: "blur(8px)",
-            animation: musicPlaying ? "musicPulse 2s ease infinite" : "none",
-          }}
-          data-ocid="hero.toggle"
-          aria-label="Toggle ambient music"
-        >
-          {musicPlaying ? "🔇" : "🎵"}
-        </motion.button>
-
         {/* Hero text content */}
         <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center text-center px-4">
           {/* Logo */}
@@ -348,7 +303,7 @@ export default function Home({ onNavigate }: HomeProps) {
             className="mb-5"
           >
             <img
-              src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
+              src="/assets/uploads/LOGO-1.jpeg"
               alt="Radhe Radhe Unique Collection"
               className="h-16 md:h-20 mx-auto rounded-full"
               style={{
@@ -1053,7 +1008,7 @@ export default function Home({ onNavigate }: HomeProps) {
                   {
                     icon: "📞",
                     label: "Phone",
-                    value: "9811254719 · 9817266196",
+                    value: "+977 9811254719 · +977 9817266196",
                   },
                   {
                     icon: "✉️",

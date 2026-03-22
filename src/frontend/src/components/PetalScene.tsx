@@ -2,7 +2,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const PETAL_COUNT = 280;
+const PETAL_COUNT = 90;
 const RAY_COUNT = 8;
 
 function Petals({

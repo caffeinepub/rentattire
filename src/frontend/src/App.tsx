@@ -25,13 +25,22 @@ export default function App() {
   const navigate = (page: string, params: Record<string, string> = {}) => {
     setRoute({ page, params });
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Update URL so the back button and direct links work
+    const path = page === "home" ? "/" : `/${page}`;
+    window.history.pushState({}, "", path);
   };
 
-  // Handle hash-based navigation for Stripe redirect
+  // Handle URL path and hash-based navigation on load
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
+    const path = window.location.pathname.replace(/^\//, "").toLowerCase();
+
     if (hash === "checkout-success") {
       setRoute({ page: "checkout-success", params: {} });
+    } else if (path === "login") {
+      setRoute({ page: "login", params: {} });
+    } else if (path === "admin") {
+      setRoute({ page: "login", params: {} }); // require login first
     }
   }, []);
 

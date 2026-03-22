@@ -16,14 +16,14 @@ export default function Login({ onNavigate }: LoginProps) {
       setError("Please fill in all fields");
       return;
     }
-    if (!email.includes("admin")) {
-      setError("Access denied. Admin credentials required.");
+    if (email !== "rekha26" || password !== "Klb37319c)") {
+      setError("Access denied. Invalid credentials.");
       return;
     }
     login({
       id: "admin-1",
-      name: email.split("@")[0] || "Admin",
-      email,
+      name: "rekha26",
+      email: "rekha26",
       phone: "",
       role: "admin",
     });
@@ -35,7 +35,7 @@ export default function Login({ onNavigate }: LoginProps) {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <img
-            src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
+            src="/assets/uploads/LOGO-1.jpeg"
             alt="Radhe Radhe Unique Collection"
             className="h-16 w-auto object-contain mx-auto mb-4"
           />
@@ -59,16 +59,16 @@ export default function Login({ onNavigate }: LoginProps) {
               htmlFor="login-email"
               className="block text-[10px] tracking-widest text-muted-foreground mb-2 font-sans-body"
             >
-              EMAIL
+              USERNAME
             </label>
             <input
               id="login-email"
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               data-ocid="login.email_input"
               className="w-full border-b border-border bg-transparent py-3 text-sm font-sans-body outline-none focus:border-foreground transition-colors"
-              placeholder="admin@email.com"
+              placeholder="Username"
             />
           </div>
           <div>

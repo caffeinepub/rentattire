@@ -51,7 +51,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             className="flex-shrink-0 mx-4 md:mx-8"
           >
             <img
-              src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
+              src="/assets/uploads/LOGO-1.jpeg"
               alt="Radhe Radhe Unique Collection"
               className="h-12 md:h-16 w-auto object-contain"
             />
@@ -142,80 +142,66 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               )}
             </button>
 
-            {/* User */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                data-ocid="nav.user_button"
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <User size={18} />
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-background border border-border shadow-sm z-50">
-                  {user ? (
-                    <>
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-xs text-muted-foreground font-sans-body">
-                          Signed in as
-                        </p>
-                        <p className="text-sm font-medium truncate font-sans-body">
-                          {user.name}
-                        </p>
-                      </div>
-                      {user.role === "admin" && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onNavigate("admin");
-                            setUserMenuOpen(false);
-                          }}
-                          data-ocid="nav.admin_link"
-                          className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors"
-                        >
-                          Admin Panel
-                        </button>
-                      )}
+            {/* User - only show when logged in */}
+            {user && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  data-ocid="nav.user_button"
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <User size={18} />
+                </button>
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-background border border-border shadow-sm z-50">
+                    <div className="px-4 py-3 border-b border-border">
+                      <p className="text-xs text-muted-foreground font-sans-body">
+                        Signed in as
+                      </p>
+                      <p className="text-sm font-medium truncate font-sans-body">
+                        {user.name}
+                      </p>
+                    </div>
+                    {user.role === "admin" && (
                       <button
                         type="button"
                         onClick={() => {
-                          onNavigate("dashboard");
+                          onNavigate("admin");
                           setUserMenuOpen(false);
                         }}
-                        data-ocid="nav.dashboard_link"
+                        data-ocid="nav.admin_link"
                         className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors"
                       >
-                        My Bookings
+                        Admin Panel
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          logout();
-                          setUserMenuOpen(false);
-                        }}
-                        data-ocid="nav.logout_button"
-                        className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors border-t border-border"
-                      >
-                        Sign Out
-                      </button>
-                    </>
-                  ) : (
+                    )}
                     <button
                       type="button"
                       onClick={() => {
-                        onNavigate("login");
+                        onNavigate("dashboard");
                         setUserMenuOpen(false);
                       }}
-                      data-ocid="nav.login_link"
+                      data-ocid="nav.dashboard_link"
                       className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors"
                     >
-                      Sign In
+                      My Bookings
                     </button>
-                  )}
-                </div>
-              )}
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        logout();
+                        setUserMenuOpen(false);
+                      }}
+                      data-ocid="nav.logout_button"
+                      className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors border-t border-border"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mobile menu */}
             <button
@@ -248,7 +234,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                 {link.label}
               </button>
             ))}
-            {user ? (
+            {user && (
               <>
                 <button
                   type="button"
@@ -271,17 +257,6 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                   SIGN OUT
                 </button>
               </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  onNavigate("login");
-                  setMobileOpen(false);
-                }}
-                className="block w-full text-left text-xs tracking-widest font-sans-body text-muted-foreground hover:text-foreground py-2"
-              >
-                SIGN IN
-              </button>
             )}
           </div>
         </div>

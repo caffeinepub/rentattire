@@ -44,7 +44,7 @@ export default function Contact() {
     {
       icon: Phone,
       title: "Phone Support",
-      info: ["+91 9811254719", "+91 9817266196"],
+      info: ["+977 9811254719", "+977 9817266196"],
     },
     {
       icon: Mail,
@@ -54,7 +54,7 @@ export default function Contact() {
     {
       icon: Clock,
       title: "Working Hours",
-      info: ["Mon-Sat: 9:00 AM - 8:00 PM", "Sun: 10:00 AM - 5:00 PM"],
+      info: ["Sun-Fri: 11:00 AM - 5:00 PM", "Saturday: Holiday"],
     },
   ];
 

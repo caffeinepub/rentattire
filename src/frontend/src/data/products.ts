@@ -343,7 +343,7 @@ export const testimonials = [
     name: "Meera Joshi",
     role: "Bride",
     comment:
-      "RentAttire made my wedding perfect! The lehenga was breathtaking and saved us thousands. Highly recommend!",
+      "Radhey Radhey Unique Collection made my wedding perfect! The lehenga was breathtaking and saved us thousands. Highly recommend!",
     rating: 5,
     avatar: "MJ",
   },
