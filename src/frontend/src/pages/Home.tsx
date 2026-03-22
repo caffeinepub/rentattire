@@ -1,875 +1,794 @@
-import {
-  ChevronDown,
-  Heart,
-  Menu,
-  Music,
-  ShoppingCart,
-  User,
-  VolumeX,
-  X,
-} from "lucide-react";
-import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
-import MoonCanvas from "../components/MoonCanvas";
-import ProductCard from "../components/ProductCard";
-import { categories, products } from "../data/products";
-import { useStore } from "../store/useStore";
+import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import PetalScene from "../components/PetalScene";
 
 interface HomeProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
 }
 
-const allCategories = [{ id: "", name: "All" }, ...categories];
+const HERO_IMAGES = [
+  "/assets/uploads/1.5-1.jpeg",
+  "/assets/uploads/1.1-3.jpeg",
+  "/assets/uploads/1.4-2.jpeg",
+  "/assets/uploads/1.2-4.jpeg",
+  "/assets/uploads/1.3-5.jpeg",
+];
 
-// Tree silhouette SVG paths
-const LEFT_TREE =
-  "M0,900 L0,400 C20,380 10,340 30,300 C15,310 5,280 25,240 C10,250 15,210 35,180 C20,195 30,150 50,120 C40,140 60,100 55,70 C70,90 75,55 70,30 L75,30 C70,55 80,90 90,70 C90,100 105,140 100,120 C115,150 120,195 110,180 C125,210 130,250 115,240 C130,280 125,310 110,300 C125,340 115,380 140,400 L140,900 Z";
-const RIGHT_TREE =
-  "M860,900 L860,400 C840,380 850,340 830,300 C845,310 855,280 835,240 C850,250 845,210 825,180 C840,195 830,150 810,120 C820,140 800,100 805,70 C790,90 785,55 790,30 L785,30 C790,55 780,90 770,70 C770,100 755,140 760,120 C745,150 740,195 750,180 C735,210 730,250 745,240 C730,280 735,310 750,300 C735,340 745,380 720,400 L720,900 Z";
-
-const GALLERY_ITEMS = [
-  { label: "Divine Collection I", sub: "Sacred Bridal" },
-  { label: "Sacred Moments II", sub: "Festive Wear" },
-  { label: "Celestial Grace III", sub: "Lehenga" },
-  { label: "Moonlit Elegance IV", sub: "Sarees" },
-  { label: "Golden Devotion V", sub: "Designer" },
-  { label: "Eternal Bloom VI", sub: "Premium" },
+const GALLERY_IMAGES = [
+  {
+    src: "/assets/uploads/1.5-1.jpeg",
+    title: "Moonlit Devotion",
+    sub: "Krishna & Radha by the Sacred Lake",
+  },
+  {
+    src: "/assets/uploads/1.1-3.jpeg",
+    title: "Rose Petal Love",
+    sub: "Golden Lamps & Eternal Devotion",
+  },
+  {
+    src: "/assets/uploads/1.4-2.jpeg",
+    title: "Golden Swing",
+    sub: "Radha Swings in Divine Grace",
+  },
+  {
+    src: "/assets/uploads/1.2-4.jpeg",
+    title: "Temple Offering",
+    sub: "Bowing at Sacred Pillars",
+  },
+  {
+    src: "/assets/uploads/1.3-5.jpeg",
+    title: "Riverside Peacock",
+    sub: "Adorned Feet by Mystic Waters",
+  },
 ];
 
 const SERVICES = [
   {
-    icon: "🌙",
-    title: "Guidance",
-    desc: "Personal styling advice rooted in spiritual aesthetics. We help you find attire that resonates with your inner divine energy.",
-    category: "products",
+    icon: "🪷",
+    title: "Sacred Collections",
+    desc: "Luxury attire for divine occasions — weddings, pujas, and sacred ceremonies. Each piece carries the essence of devotion.",
+    image: "/assets/uploads/1.1-3.jpeg",
+    page: "products",
   },
   {
-    icon: "💫",
-    title: "Love Reading",
-    desc: "Curated collections inspired by the eternal bond of Radha and Krishna — perfect for weddings and sacred unions.",
-    category: "categories",
+    icon: "🦚",
+    title: "Bridal Blessing",
+    desc: "Celestial bridal and ceremony rentals inspired by Radha's divine grace. Step into your most sacred moment.",
+    image: "/assets/uploads/1.4-2.jpeg",
+    page: "categories",
   },
   {
-    icon: "🌸",
-    title: "Healing",
-    desc: "Outfits crafted to elevate your spirit. Each garment carries the energy of devotion, grace, and timeless beauty.",
-    category: "contact",
+    icon: "🪔",
+    title: "Festival Adornments",
+    desc: "Traditional and festive wear that celebrates the vibrant spirit of Indian culture and devotional celebrations.",
+    image: "/assets/uploads/1.2-4.jpeg",
+    page: "products",
   },
 ];
 
 function useMouse() {
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const ref = useRef({ x: 0, y: 0 });
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      setMouse({
+      ref.current = {
         x: (e.clientX / window.innerWidth - 0.5) * 2,
         y: (e.clientY / window.innerHeight - 0.5) * 2,
-      });
+      };
     };
-    window.addEventListener("mousemove", handler);
+    window.addEventListener("mousemove", handler, { passive: true });
     return () => window.removeEventListener("mousemove", handler);
   }, []);
-  return mouse;
+  return ref;
 }
 
 function TiltCard({
   children,
   className,
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
+}: { children: React.ReactNode; className?: string }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   const handleMove = (e: React.MouseEvent) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const dx = (e.clientX - cx) / (rect.width / 2);
-    const dy = (e.clientY - cy) / (rect.height / 2);
-    setTilt({ x: dy * -10, y: dx * 10 });
+    setTilt({
+      x: ((e.clientY - cy) / (rect.height / 2)) * -10,
+      y: ((e.clientX - cx) / (rect.width / 2)) * 10,
+    });
   };
 
   return (
-    <div
+    <motion.div
       ref={cardRef}
       className={className}
-      style={{
-        ...style,
-        transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-        transition: "transform 0.1s ease",
-      }}
       onMouseMove={handleMove}
       onMouseLeave={() => setTilt({ x: 0, y: 0 })}
+      animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      style={{ transformStyle: "preserve-3d" }}
     >
       {children}
+    </motion.div>
+  );
+}
+
+function FloatingPetals() {
+  const petals = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    left: `${5 + ((i * 4.7) % 92)}%`,
+    delay: `${(i * 0.8) % 14}s`,
+    duration: `${10 + ((i * 1.3) % 8)}s`,
+    size: `${10 + ((i * 3) % 14)}px`,
+    emoji: i % 3 === 0 ? "🌸" : i % 3 === 1 ? "✿" : "❀",
+  }));
+
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-10">
+      {petals.map((p) => (
+        <div
+          key={p.id}
+          className="absolute petal text-pink-300/40"
+          style={{
+            left: p.left,
+            top: "-20px",
+            fontSize: p.size,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+          }}
+        >
+          {p.emoji}
+        </div>
+      ))}
     </div>
   );
 }
 
 export default function Home({ onNavigate }: HomeProps) {
-  const [activeCategory, setActiveCategory] = useState("");
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [heroIdx, setHeroIdx] = useState(0);
+  const [prevIdx, setPrevIdx] = useState<number | null>(null);
+  const [entryDone, setEntryDone] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
     phone: "",
     message: "",
   });
-  const [hoveredGallery, setHoveredGallery] = useState<number | null>(null);
+  const [formSent, setFormSent] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const mouse = useMouse();
-  const { cart, wishlist, user, logout } = useStore();
 
-  const featured = products.slice(0, 8);
-  const filtered = activeCategory
-    ? featured.filter((p) => p.categoryId === activeCategory)
-    : featured;
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
-  const fadeUp = {
-    initial: { opacity: 0, y: 40 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.7, ease: "easeOut" as const },
+  // Hero image cycle
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroIdx((prev) => {
+        setPrevIdx(prev);
+        return (prev + 1) % HERO_IMAGES.length;
+      });
+    }, 8000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Entry transition done after 2.5s
+  useEffect(() => {
+    const t = setTimeout(() => setEntryDone(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const toggleMusic = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (musicPlaying) {
+      audio.pause();
+      setMusicPlaying(false);
+    } else {
+      audio
+        .play()
+        .then(() => setMusicPlaying(true))
+        .catch(() => {});
+    }
+  }, [musicPlaying]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormSent(true);
+    setFormData({ name: "", phone: "", message: "" });
+    setTimeout(() => setFormSent(false), 4000);
   };
 
   return (
     <div
-      style={{ background: "#050810", minHeight: "100vh", color: "#e8f4ff" }}
+      className="min-h-screen overflow-x-hidden"
+      style={{ background: "#0d0d2b" }}
     >
-      {/* ── Three.js Canvas (fixed bg) ── */}
-      <MoonCanvas />
+      {/* Ambient audio */}
+      {/* biome-ignore lint/a11y/useMediaCaption: ambient music only */}
+      <audio
+        ref={audioRef}
+        loop
+        preload="none"
+        src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"
+      />
 
-      {/* ══════════════ HERO ══════════════ */}
+      {/* Floating CSS petals */}
+      <FloatingPetals />
+
+      {/* Entry divine transition */}
+      <AnimatePresence>
+        {!entryDone && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(212,175,55,0.95) 0%, rgba(184,134,11,0.7) 30%, rgba(13,13,43,0.95) 70%, #0d0d2b 100%)",
+              }}
+            />
+            <motion.div
+              className="relative z-10 text-center"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1.4, opacity: [0, 1, 0] }}
+              transition={{ duration: 2.2, ease: "easeOut" }}
+            >
+              <div className="text-6xl mb-4">🪷</div>
+              <p
+                className="text-2xl font-display tracking-widest"
+                style={{
+                  color: "#0d0d2b",
+                  fontFamily: "'Cinzel Decorative', serif",
+                }}
+              >
+                Radhe Radhe
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════
+          HERO SECTION
+      ═══════════════════════════════════════ */}
       <section
+        ref={heroRef}
         className="relative w-full overflow-hidden"
-        style={{ minHeight: "100vh" }}
+        style={{ height: "100svh", minHeight: "600px" }}
+        data-ocid="hero.section"
       >
-        {/* Moon */}
-        <div
-          style={{
-            position: "absolute",
-            top: "8%",
-            left: "50%",
-            transform: `translate(calc(-50% + ${mouse.x * -12}px), ${mouse.y * -8}px)`,
-            width: "clamp(180px, 28vw, 380px)",
-            height: "clamp(180px, 28vw, 380px)",
-            borderRadius: "50%",
-            background:
-              "radial-gradient(circle at 40% 35%, #f5faff 0%, #c8dfff 40%, #7bacd4 100%)",
-            boxShadow:
-              "0 0 80px 40px rgba(220,235,255,0.35), 0 0 160px 80px rgba(180,210,255,0.18), 0 0 240px 120px rgba(140,180,255,0.08)",
-            animation: "moonGlow 4s ease-in-out infinite",
-            zIndex: 1,
-            transition: "transform 0.15s ease",
-          }}
-        />
-
-        {/* Fog layers */}
-        {[
-          { id: "fog-1", top: "55%", opacity: 0.18, delay: 0, dur: 18 },
-          { id: "fog-2", top: "65%", opacity: 0.12, delay: 6, dur: 24 },
-          { id: "fog-3", top: "75%", opacity: 0.1, delay: 3, dur: 20 },
-        ].map((fog) => (
-          <div
-            key={fog.id}
-            style={{
-              position: "absolute",
-              left: "-20%",
-              right: "-20%",
-              top: fog.top,
-              height: "120px",
-              background:
-                "linear-gradient(90deg, transparent 0%, rgba(180,210,255,0.4) 30%, rgba(200,220,255,0.6) 50%, rgba(180,210,255,0.4) 70%, transparent 100%)",
-              opacity: fog.opacity,
-              filter: "blur(8px)",
-              animation: `fogDrift ${fog.dur}s linear ${fog.delay}s infinite alternate`,
-              zIndex: 2,
-              pointerEvents: "none",
-              transform: `translateX(${mouse.x * 15}px)`,
-              transition: "transform 0.3s ease",
-            }}
-          />
-        ))}
-
-        {/* Tree silhouettes */}
-        <svg
-          role="img"
-          aria-label="Left tree silhouette"
-          style={{
-            position: "absolute",
-            left: 0,
-            bottom: 0,
-            height: "75vh",
-            width: "auto",
-            zIndex: 3,
-            pointerEvents: "none",
-            transform: `translateX(${mouse.x * -8}px)`,
-            transition: "transform 0.2s ease",
-          }}
-          viewBox="0 0 140 900"
-          preserveAspectRatio="xMinYMax meet"
-        >
-          <path d={LEFT_TREE} fill="#01020a" />
-        </svg>
-        <svg
-          role="img"
-          aria-label="Right tree silhouette"
-          style={{
-            position: "absolute",
-            right: 0,
-            bottom: 0,
-            height: "75vh",
-            width: "auto",
-            zIndex: 3,
-            pointerEvents: "none",
-            transform: `translateX(${mouse.x * 8}px)`,
-            transition: "transform 0.2s ease",
-          }}
-          viewBox="720 0 140 900"
-          preserveAspectRatio="xMaxYMax meet"
-        >
-          <path d={RIGHT_TREE} fill="#01020a" />
-        </svg>
-
-        {/* Characters — hero image with silhouette treatment */}
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            bottom: "8%",
-            transform: `translate(calc(-50% + ${mouse.x * -20}px), ${mouse.y * -10}px)`,
-            width: "clamp(260px, 50vw, 700px)",
-            zIndex: 4,
-            pointerEvents: "none",
-            transition: "transform 0.18s ease",
-          }}
-        >
-          <img
-            src="/assets/generated/radha-krishna-hero.dim_1600x900.jpg"
-            alt="Radha Krishna divine silhouette"
-            style={{
-              width: "100%",
-              height: "auto",
-              filter: "brightness(0.25) contrast(1.4) saturate(0.3)",
-              mixBlendMode: "luminosity",
-              objectFit: "contain",
-              objectPosition: "bottom",
-            }}
-          />
-          {/* Soft glow aura around characters */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "radial-gradient(ellipse at 50% 60%, rgba(249,168,37,0.12) 0%, transparent 70%)",
-              animation: "moonGlow 3s ease-in-out infinite",
-            }}
-          />
+        {/* Three.js canvas background */}
+        <div className="absolute inset-0 z-0">
+          <PetalScene mouse={mouse} />
         </div>
 
-        {/* Foreground leaves */}
+        {/* Deep gradient overlay */}
         <div
+          className="absolute inset-0 z-[1] pointer-events-none"
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "18vh",
             background:
-              "linear-gradient(to top, #01020a 0%, #030609 50%, transparent 100%)",
-            zIndex: 5,
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: "14vh",
-            left: 0,
-            right: 0,
-            height: "8px",
-            background:
-              "linear-gradient(90deg, #01251a 0%, #011a10 50%, #01251a 100%)",
-            opacity: 0.8,
-            zIndex: 6,
-            pointerEvents: "none",
-            transform: `translateX(${mouse.x * 30}px)`,
-            transition: "transform 0.1s ease",
+              "linear-gradient(180deg, rgba(13,13,43,0.5) 0%, rgba(13,13,43,0.2) 40%, rgba(13,13,43,0.7) 100%)",
           }}
         />
 
-        {/* ── NAVBAR ── */}
-        <nav
-          className="absolute top-0 left-0 right-0 z-20"
-          style={{
-            background: "rgba(5,8,16,0.6)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderBottom: "1px solid rgba(249,168,37,0.2)",
-          }}
+        {/* Hero image carousel */}
+        <motion.div
+          className="absolute inset-0 z-[2]"
+          style={{ y: heroY, opacity: heroOpacity }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16 md:h-20">
-              {/* Logo */}
-              <button
-                type="button"
-                onClick={() => onNavigate("home")}
-                data-ocid="nav.home_link"
-                className="flex-shrink-0"
-              >
-                <img
-                  src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
-                  alt="Radhey Radhey Unique Collection"
-                  className="h-10 md:h-14 w-auto object-contain"
-                  style={{
-                    filter: "drop-shadow(0 2px 8px rgba(249,168,37,0.4))",
-                  }}
-                />
-              </button>
-
-              {/* Desktop Nav */}
-              <div className="hidden md:flex items-center gap-8">
-                {[
-                  { label: "Home", page: "home" },
-                  { label: "Collection", page: "products" },
-                  { label: "Categories", page: "categories" },
-                  { label: "Contact", page: "contact" },
-                ].map((link) => (
-                  <button
-                    key={link.page + link.label}
-                    type="button"
-                    onClick={() => onNavigate(link.page)}
-                    data-ocid={`nav.${link.label.toLowerCase()}_link`}
-                    className="text-sm font-medium tracking-widest transition-all hover:scale-105"
-                    style={{
-                      color: "#c8d8f0",
-                      fontFamily: "Poppins, sans-serif",
-                      textShadow: "0 0 10px rgba(249,168,37,0)",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLElement).style.color = "#f9a825";
-                      (e.target as HTMLElement).style.textShadow =
-                        "0 0 12px rgba(249,168,37,0.6)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLElement).style.color = "#c8d8f0";
-                      (e.target as HTMLElement).style.textShadow = "none";
-                    }}
-                  >
-                    {link.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Right icons */}
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => onNavigate("wishlist")}
-                  data-ocid="nav.wishlist_link"
-                  className="relative p-2 transition-all hover:scale-110"
-                  style={{ color: wishlist.length > 0 ? "#f9a825" : "#c8d8f0" }}
-                >
-                  <Heart
-                    size={18}
-                    fill={wishlist.length > 0 ? "#f9a825" : "none"}
-                  />
-                  {wishlist.length > 0 && (
-                    <span
-                      className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
-                      style={{ background: "#f9a825", color: "#050810" }}
-                    >
-                      {wishlist.length}
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate("cart")}
-                  data-ocid="nav.cart_link"
-                  className="relative p-2 transition-all hover:scale-110"
-                  style={{ color: cart.length > 0 ? "#f9a825" : "#c8d8f0" }}
-                >
-                  <ShoppingCart size={18} />
-                  {cart.length > 0 && (
-                    <span
-                      className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
-                      style={{ background: "#f9a825", color: "#050810" }}
-                    >
-                      {cart.length}
-                    </span>
-                  )}
-                </button>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      user
-                        ? setUserMenuOpen(!userMenuOpen)
-                        : onNavigate("login")
-                    }
-                    data-ocid="nav.user_link"
-                    className="p-2 transition-all hover:scale-110"
-                    style={{ color: user ? "#f9a825" : "#c8d8f0" }}
-                  >
-                    <User size={18} />
-                  </button>
-                  {userMenuOpen && user && (
-                    <div
-                      className="absolute right-0 top-full mt-1 w-44 rounded-xl py-2 z-50"
-                      style={{
-                        background: "rgba(8,12,24,0.95)",
-                        border: "1px solid rgba(249,168,37,0.3)",
-                        backdropFilter: "blur(20px)",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors"
-                        style={{
-                          color: "#c8d8f0",
-                          fontFamily: "Poppins, sans-serif",
-                        }}
-                        onClick={() => {
-                          onNavigate("dashboard");
-                          setUserMenuOpen(false);
-                        }}
-                        data-ocid="nav.dashboard_link"
-                      >
-                        My Dashboard
-                      </button>
-                      {user.email.includes("admin") && (
-                        <button
-                          type="button"
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors"
-                          style={{
-                            color: "#f9a825",
-                            fontFamily: "Poppins, sans-serif",
-                          }}
-                          onClick={() => {
-                            onNavigate("admin");
-                            setUserMenuOpen(false);
-                          }}
-                          data-ocid="nav.admin_link"
-                        >
-                          Admin Panel
-                        </button>
-                      )}
-                      <hr
-                        style={{
-                          borderColor: "rgba(249,168,37,0.15)",
-                          margin: "4px 0",
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors"
-                        style={{
-                          color: "#c8d8f0",
-                          fontFamily: "Poppins, sans-serif",
-                        }}
-                        onClick={() => {
-                          logout();
-                          setUserMenuOpen(false);
-                        }}
-                        data-ocid="nav.logout_button"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {/* Mobile menu button */}
-                <button
-                  type="button"
-                  className="md:hidden p-2"
-                  style={{ color: "#c8d8f0" }}
-                  onClick={() => setMobileOpen(!mobileOpen)}
-                  data-ocid="nav.mobile_menu_button"
-                >
-                  {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile nav */}
-            {mobileOpen && (
+          {HERO_IMAGES.map((src, i) => (
+            <motion.div
+              key={src}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: i === heroIdx ? 1 : 0 }}
+              transition={{ duration: 2.5, ease: "easeInOut" }}
+              style={{ zIndex: i === heroIdx ? 2 : i === prevIdx ? 1 : 0 }}
+            >
+              <img
+                src={src}
+                alt="Divine scene"
+                className="w-full h-full"
+                style={{
+                  objectFit: "cover",
+                  objectPosition: "center",
+                }}
+              />
+              {/* Cinematic overlay */}
               <div
-                className="md:hidden pb-4"
-                style={{ borderTop: "1px solid rgba(249,168,37,0.15)" }}
-              >
-                {[
-                  { label: "Home", page: "home" },
-                  { label: "Collection", page: "products" },
-                  { label: "Categories", page: "categories" },
-                  { label: "Contact", page: "contact" },
-                ].map((link) => (
-                  <button
-                    key={link.page}
-                    type="button"
-                    onClick={() => {
-                      onNavigate(link.page);
-                      setMobileOpen(false);
-                    }}
-                    data-ocid={`nav.${link.label.toLowerCase()}_mobile_link`}
-                    className="block w-full text-left px-2 py-3 text-sm tracking-wider"
-                    style={{
-                      color: "#c8d8f0",
-                      fontFamily: "Poppins, sans-serif",
-                    }}
-                  >
-                    {link.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(13,13,43,0.3) 0%, rgba(13,13,43,0.1) 30%, rgba(13,13,43,0.0) 50%, rgba(13,13,43,0.5) 80%, rgba(13,13,43,0.9) 100%)",
+                }}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
 
-        {/* ── Hero Content ── */}
-        <div
-          className="relative flex flex-col items-center justify-center text-center px-4"
+        {/* Music toggle */}
+        <motion.button
+          type="button"
+          onClick={toggleMusic}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 2.8 }}
+          className="absolute top-5 right-5 z-20 w-11 h-11 rounded-full flex items-center justify-center text-lg"
           style={{
-            minHeight: "100vh",
-            paddingTop: "80px",
-            zIndex: 10,
+            background: "rgba(13,13,43,0.6)",
+            border: "1px solid rgba(212,175,55,0.5)",
+            backdropFilter: "blur(8px)",
+            animation: musicPlaying ? "musicPulse 2s ease infinite" : "none",
           }}
+          data-ocid="hero.toggle"
+          aria-label="Toggle ambient music"
         >
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3 }}
-          >
-            <p
-              className="text-xs tracking-[0.4em] mb-4"
-              style={{
-                color: "rgba(249,168,37,0.7)",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              ✦ DIVINE COLLECTION ✦
-            </p>
-            <h1
-              className="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight mb-2"
-              style={{
-                fontFamily: "'Cinzel Decorative', 'Playfair Display', serif",
-                color: "#f9a825",
-                textShadow:
-                  "0 0 30px rgba(249,168,37,0.6), 0 0 60px rgba(249,168,37,0.3), 0 0 100px rgba(249,168,37,0.15)",
-                animation: "goldPulse 3s ease-in-out infinite",
-              }}
-            >
-              Radhey Radhey
-            </h1>
-            <h2
-              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-6"
-              style={{
-                fontFamily: "'Cinzel Decorative', 'Playfair Display', serif",
-                color: "#ffd54f",
-                textShadow:
-                  "0 0 20px rgba(255,213,79,0.5), 0 0 40px rgba(249,168,37,0.25)",
-              }}
-            >
-              Unique Collection
-            </h2>
-            <p
-              className="text-sm md:text-base tracking-[0.2em] mb-10"
-              style={{ color: "#c8d8f0", fontFamily: "Poppins, sans-serif" }}
-            >
-              ✦ Where Divine Love Meets Timeless Grace ✦
-            </p>
+          {musicPlaying ? "🔇" : "🎵"}
+        </motion.button>
 
-            <div className="flex flex-wrap gap-4 justify-center">
-              <button
-                type="button"
-                onClick={() => onNavigate("products")}
-                data-ocid="home.explore_button"
-                className="px-8 py-4 rounded-full text-sm font-medium tracking-widest transition-all hover:scale-105"
-                style={{
-                  background: "rgba(249,168,37,0.15)",
-                  border: "1px solid rgba(249,168,37,0.6)",
-                  color: "#f9a825",
-                  backdropFilter: "blur(10px)",
-                  fontFamily: "Poppins, sans-serif",
-                  boxShadow: "0 0 20px rgba(249,168,37,0.15)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(249,168,37,0.3)";
-                  (e.currentTarget as HTMLElement).style.boxShadow =
-                    "0 0 30px rgba(249,168,37,0.4)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(249,168,37,0.15)";
-                  (e.currentTarget as HTMLElement).style.boxShadow =
-                    "0 0 20px rgba(249,168,37,0.15)";
-                }}
-              >
-                ✦ Explore
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigate("products")}
-                data-ocid="home.enter_experience_button"
-                className="px-8 py-4 rounded-full text-sm font-medium tracking-widest transition-all hover:scale-105"
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  color: "#e8f4ff",
-                  backdropFilter: "blur(10px)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(255,255,255,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(255,255,255,0.08)";
-                }}
-              >
-                Enter Experience
-              </button>
-            </div>
+        {/* Hero text content */}
+        <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center text-center px-4">
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.6, duration: 0.8 }}
+            className="mb-5"
+          >
+            <img
+              src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
+              alt="Radhe Radhe Unique Collection"
+              className="h-16 md:h-20 mx-auto rounded-full"
+              style={{
+                border: "2px solid rgba(212,175,55,0.6)",
+                boxShadow: "0 0 30px rgba(212,175,55,0.3)",
+              }}
+            />
           </motion.div>
 
-          {/* Scroll indicator */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.7, duration: 1 }}
+            className="font-display text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-3"
+            style={{
+              fontFamily: "'Cinzel Decorative', serif",
+              color: "#D4AF37",
+              textShadow:
+                "0 0 30px rgba(212,175,55,0.6), 0 0 60px rgba(212,175,55,0.3), 0 2px 8px rgba(0,0,0,0.8)",
+              animation: "goldPulse 3s ease-in-out infinite",
+            }}
+          >
+            Radhey Radhey
+          </motion.h1>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.9, duration: 1 }}
+            className="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl mb-3"
+            style={{
+              fontFamily: "'Cinzel Decorative', serif",
+              color: "#ffe082",
+              textShadow: "0 2px 12px rgba(0,0,0,0.8)",
+            }}
+          >
+            Unique Collection
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 3.1, duration: 1 }}
+            className="text-sm sm:text-base md:text-lg mb-8 tracking-widest"
+            style={{
+              color: "#f5f0e8",
+              textShadow: "0 2px 8px rgba(0,0,0,0.9)",
+              letterSpacing: "0.2em",
+            }}
+          >
+            ✦ A Sacred Love · An Eternal Journey ✦
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 3.3, duration: 0.8 }}
+            className="flex flex-col sm:flex-row gap-4"
+          >
+            <button
+              type="button"
+              onClick={() => onNavigate("products")}
+              className="px-8 py-3 text-sm tracking-widest transition-all duration-300 hover:scale-105"
+              style={{
+                background: "rgba(212,175,55,0.1)",
+                border: "1px solid rgba(212,175,55,0.7)",
+                color: "#D4AF37",
+                backdropFilter: "blur(12px)",
+                borderRadius: "4px",
+                fontFamily: "'Cinzel Decorative', serif",
+                fontSize: "0.75rem",
+                letterSpacing: "0.15em",
+                animation: "goldPulse 3s ease-in-out infinite",
+                textShadow: "0 0 10px rgba(212,175,55,0.5)",
+              }}
+              data-ocid="hero.primary_button"
+            >
+              ✦ Enter Divine Experience ✦
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("categories")}
+              className="px-6 py-3 text-sm tracking-widest transition-all duration-300 hover:scale-105"
+              style={{
+                background: "rgba(13,13,43,0.4)",
+                border: "1px solid rgba(245,240,232,0.3)",
+                color: "#f5f0e8",
+                backdropFilter: "blur(12px)",
+                borderRadius: "4px",
+                fontSize: "0.7rem",
+                letterSpacing: "0.15em",
+              }}
+              data-ocid="hero.secondary_button"
+            >
+              Browse Collections
+            </button>
+          </motion.div>
+
+          {/* Hero image indicators */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="absolute bottom-8"
-            style={{ color: "#c8d8f0", zIndex: 10 }}
+            transition={{ delay: 3.5 }}
+            className="absolute bottom-8 flex gap-2"
           >
-            <ChevronDown
-              size={24}
-              style={{ animation: "bounce 2s ease-in-out infinite" }}
-            />
+            {HERO_IMAGES.map((src, i) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => {
+                  setPrevIdx(heroIdx);
+                  setHeroIdx(i);
+                }}
+                className="transition-all duration-300"
+                style={{
+                  width: i === heroIdx ? "24px" : "6px",
+                  height: "6px",
+                  borderRadius: "3px",
+                  background:
+                    i === heroIdx ? "#D4AF37" : "rgba(212,175,55,0.35)",
+                }}
+                data-ocid="hero.tab"
+                aria-label={`Image ${i + 1}`}
+              />
+            ))}
           </motion.div>
         </div>
+
+        {/* Lotus decorators */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-24 z-[3] pointer-events-none"
+          style={{
+            background: "linear-gradient(to top, #0d0d2b, transparent)",
+          }}
+        />
       </section>
 
-      {/* ══════════════ ABOUT ══════════════ */}
+      {/* ═══════════════════════════════════════
+          ABOUT SECTION
+      ═══════════════════════════════════════ */}
       <section
+        className="relative py-24 md:py-32 overflow-hidden"
         style={{
-          background: "linear-gradient(180deg, #0a0e1a 0%, #0d1220 100%)",
-          padding: "100px 0",
-          position: "relative",
-          zIndex: 10,
+          background:
+            "linear-gradient(135deg, #0d0d2b 0%, #0a1628 40%, #003d33 80%, #0d0d2b 100%)",
         }}
+        data-ocid="about.section"
       >
-        {/* Gold divider */}
+        {/* Decorative gold line */}
         <div
+          className="absolute top-0 left-0 right-0 h-px"
           style={{
-            height: "1px",
             background:
-              "linear-gradient(90deg, transparent, rgba(249,168,37,0.6), transparent)",
-            marginBottom: "80px",
+              "linear-gradient(to right, transparent, #D4AF37, transparent)",
           }}
         />
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Image card */}
-            <motion.div {...fadeUp}>
+        <div className="max-w-6xl mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* Image */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1 }}
+              className="relative"
+            >
               <div
+                className="relative rounded-2xl overflow-hidden"
                 style={{
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  border: "1px solid rgba(249,168,37,0.3)",
                   boxShadow:
-                    "0 0 40px rgba(249,168,37,0.15), 0 20px 60px rgba(0,0,0,0.4)",
-                  background: "rgba(249,168,37,0.04)",
+                    "0 0 60px rgba(212,175,55,0.2), 0 0 120px rgba(212,175,55,0.08)",
                 }}
               >
                 <img
-                  src="/assets/generated/radha-krishna-hero.dim_1600x900.jpg"
-                  alt="Radha Krishna divine art"
+                  src="/assets/uploads/1.5-1.jpeg"
+                  alt="Krishna and Radha by the moonlit lake"
+                  className="w-full h-[420px] md:h-[500px] object-cover"
+                />
+                {/* Shimmer border */}
+                <div
+                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{ border: "1px solid rgba(212,175,55,0.4)" }}
+                />
+              </div>
+              {/* Gold decorative corner */}
+              <div
+                className="absolute -top-3 -left-3 w-16 h-16 pointer-events-none"
+                style={{
+                  borderTop: "2px solid #D4AF37",
+                  borderLeft: "2px solid #D4AF37",
+                }}
+              />
+              <div
+                className="absolute -bottom-3 -right-3 w-16 h-16 pointer-events-none"
+                style={{
+                  borderBottom: "2px solid #D4AF37",
+                  borderRight: "2px solid #D4AF37",
+                }}
+              />
+            </motion.div>
+
+            {/* Text */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.2 }}
+            >
+              <p
+                className="text-xs tracking-widest mb-4"
+                style={{ color: "#D4AF37", letterSpacing: "0.3em" }}
+              >
+                ✦ DIVINE LOVE STORY ✦
+              </p>
+              <h2
+                className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight"
+                style={{
+                  fontFamily: "'Cinzel Decorative', serif",
+                  color: "#ffe082",
+                  textShadow: "0 0 20px rgba(212,175,55,0.3)",
+                }}
+              >
+                The Eternal
+                <br />
+                <span style={{ color: "#D4AF37" }}>Love Story</span>
+              </h2>
+              {/* Gold underline */}
+              <div
+                className="w-24 h-0.5 mb-8"
+                style={{
+                  background: "linear-gradient(to right, #D4AF37, transparent)",
+                }}
+              />
+              <p
+                className="text-base md:text-lg leading-relaxed mb-5"
+                style={{ color: "rgba(245,240,232,0.85)", lineHeight: "1.9" }}
+              >
+                In the divine realm of Vrindavan, where moonlight dances on
+                lotus ponds and peacocks sing of immortal love — Radha and
+                Krishna exist in eternal union. Their love is not merely a
+                story; it is the universe's deepest truth.
+              </p>
+              <p
+                className="text-base leading-relaxed mb-8"
+                style={{ color: "rgba(245,240,232,0.7)", lineHeight: "1.9" }}
+              >
+                At Radhe Radhe Unique Collection, we honour this sacred bond
+                through carefully curated attire — each garment woven with
+                devotion, each thread carrying the fragrance of that eternal
+                love. Dress not just for an occasion, but for the divine within
+                you.
+              </p>
+
+              {/* Fabric flowing accent */}
+              <div
+                className="flex items-center gap-4"
+                style={{ animation: "fabricFlow 4s ease-in-out infinite" }}
+              >
+                <div
+                  className="h-px flex-1"
                   style={{
-                    width: "100%",
-                    height: "auto",
-                    display: "block",
-                    filter: "brightness(0.85) saturate(1.1)",
+                    background:
+                      "linear-gradient(to right, #D4AF37, rgba(212,175,55,0.2))",
+                  }}
+                />
+                <span style={{ color: "#D4AF37", fontSize: "1.2rem" }}>🪷</span>
+                <span
+                  className="text-xs tracking-widest"
+                  style={{
+                    color: "rgba(212,175,55,0.7)",
+                    letterSpacing: "0.25em",
+                  }}
+                >
+                  Rekha Khemka · Birgunj
+                </span>
+                <span style={{ color: "#D4AF37", fontSize: "1.2rem" }}>🪷</span>
+                <div
+                  className="h-px flex-1"
+                  style={{
+                    background:
+                      "linear-gradient(to left, #D4AF37, rgba(212,175,55,0.2))",
                   }}
                 />
               </div>
             </motion.div>
-
-            {/* Text content */}
-            <motion.div {...fadeUp} transition={{ duration: 0.7, delay: 0.2 }}>
-              <p
-                className="text-xs tracking-[0.4em] mb-4"
-                style={{
-                  color: "rgba(249,168,37,0.7)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                OUR STORY
-              </p>
-              <h2
-                className="text-3xl md:text-4xl font-bold mb-4"
-                style={{
-                  fontFamily: "'Cinzel Decorative', serif",
-                  color: "#f9a825",
-                  textShadow: "0 0 20px rgba(249,168,37,0.3)",
-                }}
-              >
-                The Spirit of Radhe Radhe
-              </h2>
-              <div
-                style={{
-                  width: "60px",
-                  height: "2px",
-                  background: "linear-gradient(90deg, #f9a825, transparent)",
-                  marginBottom: "24px",
-                }}
-              />
-              <p
-                className="text-base leading-relaxed mb-4"
-                style={{ color: "#c8d8f0", fontFamily: "Poppins, sans-serif" }}
-              >
-                Radhe Radhe Unique Collection celebrates the timeless beauty of
-                Indian traditions. Each piece is handpicked to embody grace,
-                devotion, and elegance — perfect for weddings, festivals, and
-                sacred celebrations.
-              </p>
-              <p
-                className="text-sm leading-relaxed mb-8"
-                style={{
-                  color: "rgba(200,216,240,0.7)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                We believe every woman deserves to feel divine. Our curated
-                range of traditional and contemporary Indian wear brings the
-                spirit of Radha's eternal grace to life through every thread and
-                embellishment.
-              </p>
-              <button
-                type="button"
-                onClick={() => onNavigate("contact")}
-                data-ocid="home.story_cta_button"
-                className="px-8 py-3 rounded-full text-sm font-medium tracking-widest transition-all hover:scale-105"
-                style={{
-                  background: "rgba(249,168,37,0.12)",
-                  border: "1px solid rgba(249,168,37,0.5)",
-                  color: "#f9a825",
-                  fontFamily: "Poppins, sans-serif",
-                  backdropFilter: "blur(10px)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(249,168,37,0.25)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(249,168,37,0.12)";
-                }}
-              >
-                Learn More About Us
-              </button>
-            </motion.div>
           </div>
         </div>
+
+        {/* Bottom deco line */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{
+            background:
+              "linear-gradient(to right, transparent, #D4AF37, transparent)",
+          }}
+        />
       </section>
 
-      {/* ══════════════ SERVICES ══════════════ */}
+      {/* ═══════════════════════════════════════
+          SERVICES SECTION
+      ═══════════════════════════════════════ */}
       <section
-        style={{
-          background: "#080c18",
-          padding: "100px 0",
-          position: "relative",
-          zIndex: 10,
-        }}
+        className="relative py-24 md:py-32 overflow-hidden"
+        style={{ background: "#0d0d2b" }}
+        data-ocid="services.section"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="text-center mb-16">
-            <p
-              className="text-xs tracking-[0.4em] mb-4"
+        {/* Decorative particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(12)].map((_, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: static list
+              key={`p${i}`}
+              className="absolute w-1 h-1 rounded-full"
               style={{
-                color: "rgba(249,168,37,0.7)",
-                fontFamily: "Poppins, sans-serif",
+                left: `${(i * 8.3) % 100}%`,
+                top: `${(i * 7.1) % 100}%`,
+                background: "#D4AF37",
+                opacity: 0.2,
+                animation: `sparkle-pulse ${2 + (i % 3)}s ease-in-out infinite`,
+                animationDelay: `${i * 0.3}s`,
               }}
+            />
+          ))}
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 md:px-8">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <p
+              className="text-xs tracking-widest mb-3"
+              style={{ color: "#D4AF37", letterSpacing: "0.3em" }}
             >
-              WHAT WE OFFER
+              ✦ WHAT WE OFFER ✦
             </p>
             <h2
-              className="text-3xl md:text-4xl font-bold"
+              className="text-3xl md:text-5xl font-bold"
               style={{
                 fontFamily: "'Cinzel Decorative', serif",
-                color: "#f9a825",
-                textShadow: "0 0 20px rgba(249,168,37,0.3)",
+                color: "#ffe082",
+                textShadow: "0 0 20px rgba(212,175,55,0.3)",
               }}
             >
-              Sacred Services
+              Divine Offerings
             </h2>
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <div
+                className="h-px w-16"
+                style={{ background: "rgba(212,175,55,0.4)" }}
+              />
+              <span style={{ color: "#D4AF37" }}>🪷</span>
+              <div
+                className="h-px w-16"
+                style={{ background: "rgba(212,175,55,0.4)" }}
+              />
+            </div>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {SERVICES.map((svc, i) => (
+            {SERVICES.map((service, i) => (
               <motion.div
-                key={svc.title}
-                {...fadeUp}
+                key={service.title}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ duration: 0.7, delay: i * 0.15 }}
               >
-                <TiltCard
-                  className="cursor-pointer h-full"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(249,168,37,0.2)",
-                    borderRadius: "20px",
-                    backdropFilter: "blur(16px)",
-                    padding: "40px 32px",
-                  }}
-                >
+                <TiltCard className="relative h-80 rounded-2xl overflow-hidden cursor-pointer group">
+                  {/* Background image */}
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
                   <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-6"
+                    className="absolute inset-0"
                     style={{
-                      background: "rgba(249,168,37,0.1)",
-                      border: "1px solid rgba(249,168,37,0.2)",
+                      background:
+                        "linear-gradient(to bottom, rgba(13,13,43,0.3) 0%, rgba(13,13,43,0.85) 100%)",
+                    }}
+                  />
+                  {/* Glass card */}
+                  <div
+                    className="absolute inset-0 flex flex-col justify-end p-7 transition-all duration-300"
+                    style={{
+                      background: "transparent",
                     }}
                   >
-                    {svc.icon}
+                    <div
+                      className="mb-3 text-3xl"
+                      style={{
+                        animation: "divaFlicker 2.5s ease-in-out infinite",
+                        animationDelay: `${i * 0.5}s`,
+                      }}
+                    >
+                      {service.icon}
+                    </div>
+                    <h3
+                      className="text-xl font-bold mb-3"
+                      style={{
+                        fontFamily: "'Cinzel Decorative', serif",
+                        color: "#D4AF37",
+                      }}
+                    >
+                      {service.title}
+                    </h3>
+                    <p
+                      className="text-sm leading-relaxed"
+                      style={{ color: "rgba(245,240,232,0.8)" }}
+                    >
+                      {service.desc}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(service.page)}
+                      className="mt-4 self-start text-xs tracking-widest px-5 py-2 transition-all duration-300"
+                      style={{
+                        border: "1px solid rgba(212,175,55,0.5)",
+                        color: "#D4AF37",
+                        borderRadius: "3px",
+                        background: "rgba(13,13,43,0.4)",
+                        backdropFilter: "blur(8px)",
+                      }}
+                      data-ocid={`services.item.${i + 1}`}
+                    >
+                      Explore →
+                    </button>
                   </div>
-                  <h3
-                    className="text-xl font-bold mb-3"
+                  {/* Hover gold border */}
+                  <div
+                    className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     style={{
-                      fontFamily: "'Cinzel Decorative', serif",
-                      color: "#f9a825",
+                      border: "1px solid rgba(212,175,55,0.6)",
+                      boxShadow: "inset 0 0 30px rgba(212,175,55,0.1)",
                     }}
-                  >
-                    {svc.title}
-                  </h3>
-                  <p
-                    className="text-sm leading-relaxed mb-6"
-                    style={{
-                      color: "rgba(200,216,240,0.8)",
-                      fontFamily: "Poppins, sans-serif",
-                    }}
-                  >
-                    {svc.desc}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(svc.category)}
-                    data-ocid={`home.service.${svc.title.toLowerCase().replace(" ", "_")}_button`}
-                    className="text-xs tracking-widest transition-all hover:scale-105"
-                    style={{
-                      color: "rgba(249,168,37,0.7)",
-                      fontFamily: "Poppins, sans-serif",
-                    }}
-                  >
-                    Explore →
-                  </button>
+                  />
                 </TiltCard>
               </motion.div>
             ))}
@@ -877,805 +796,505 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
       </section>
 
-      {/* ══════════════ FEATURED PRODUCTS ══════════════ */}
+      {/* ═══════════════════════════════════════
+          GALLERY SECTION
+      ═══════════════════════════════════════ */}
       <section
+        className="relative py-24 md:py-32 overflow-hidden"
         style={{
-          background: "linear-gradient(180deg, #080c18 0%, #0a0e1a 100%)",
-          padding: "100px 0",
-          position: "relative",
-          zIndex: 10,
+          background:
+            "linear-gradient(180deg, #0d0d2b 0%, #050810 50%, #0d0d2b 100%)",
         }}
+        data-ocid="gallery.section"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="text-center mb-12">
+        <div className="max-w-6xl mx-auto px-4 md:px-8">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
             <p
-              className="text-xs tracking-[0.4em] mb-4"
-              style={{
-                color: "rgba(249,168,37,0.7)",
-                fontFamily: "Poppins, sans-serif",
-              }}
+              className="text-xs tracking-widest mb-3"
+              style={{ color: "#D4AF37", letterSpacing: "0.3em" }}
             >
-              CURATED FOR YOU
+              ✦ SACRED MOMENTS ✦
             </p>
             <h2
-              className="text-3xl md:text-4xl font-bold mb-8"
+              className="text-3xl md:text-5xl font-bold"
               style={{
                 fontFamily: "'Cinzel Decorative', serif",
-                color: "#f9a825",
-                textShadow: "0 0 20px rgba(249,168,37,0.3)",
+                color: "#ffe082",
+                textShadow: "0 0 20px rgba(212,175,55,0.3)",
               }}
             >
-              Divine Collection
+              Divine Gallery
             </h2>
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <div
+                className="h-px w-16"
+                style={{ background: "rgba(212,175,55,0.4)" }}
+              />
+              <span style={{ color: "#D4AF37" }}>✦</span>
+              <div
+                className="h-px w-16"
+                style={{ background: "rgba(212,175,55,0.4)" }}
+              />
+            </div>
+          </motion.div>
 
-            {/* Category pills */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {allCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setActiveCategory(cat.id)}
-                  data-ocid={`home.category_${cat.id || "all"}_tab`}
-                  className="px-5 py-2 rounded-full text-xs tracking-widest transition-all hover:scale-105"
+          {/* Gallery grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {GALLERY_IMAGES.map((item, i) => (
+              <motion.div
+                key={item.src}
+                className={`relative overflow-hidden rounded-xl cursor-pointer group ${
+                  i === 0 ? "md:col-span-2 md:row-span-2" : ""
+                }`}
+                style={{ aspectRatio: i === 0 ? "16/10" : "4/3" }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                onClick={() => setLightboxImg(i)}
+                data-ocid={`gallery.item.${i + 1}`}
+              >
+                <img
+                  src={item.src}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5"
                   style={{
                     background:
-                      activeCategory === cat.id
-                        ? "rgba(249,168,37,0.25)"
-                        : "rgba(255,255,255,0.05)",
-                    border:
-                      activeCategory === cat.id
-                        ? "1px solid rgba(249,168,37,0.7)"
-                        : "1px solid rgba(255,255,255,0.1)",
-                    color: activeCategory === cat.id ? "#f9a825" : "#c8d8f0",
-                    fontFamily: "Poppins, sans-serif",
-                    backdropFilter: "blur(10px)",
-                    boxShadow:
-                      activeCategory === cat.id
-                        ? "0 0 12px rgba(249,168,37,0.2)"
-                        : "none",
+                      "linear-gradient(to top, rgba(13,13,43,0.9) 0%, transparent 60%)",
+                    border: "1px solid rgba(212,175,55,0.4)",
+                    borderRadius: "inherit",
                   }}
                 >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Product grid — wrapped in dark theme */}
-          <div
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-            data-ocid="home.products.list"
-          >
-            {filtered.map((product, i) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.06 }}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  borderRadius: "16px",
-                  overflow: "hidden",
-                  border: "1px solid rgba(249,168,37,0.1)",
-                  transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-                }}
-                data-ocid={`home.products.item.${i + 1}`}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(249,168,37,0.35)";
-                  e.currentTarget.style.boxShadow =
-                    "0 8px 32px rgba(249,168,37,0.12)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(249,168,37,0.1)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                <ProductCard product={product} onNavigate={onNavigate} />
-              </motion.div>
-            ))}
-          </div>
-
-          {filtered.length === 0 && (
-            <div
-              className="text-center py-16"
-              data-ocid="home.products.empty_state"
-              style={{
-                color: "rgba(200,216,240,0.5)",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              No items in this category yet.
-            </div>
-          )}
-
-          <motion.div {...fadeUp} className="text-center mt-12">
-            <button
-              type="button"
-              onClick={() => onNavigate("products")}
-              data-ocid="home.view_all_button"
-              className="px-10 py-4 rounded-full text-sm tracking-widest transition-all hover:scale-105"
-              style={{
-                background: "rgba(249,168,37,0.12)",
-                border: "1px solid rgba(249,168,37,0.4)",
-                color: "#f9a825",
-                fontFamily: "Poppins, sans-serif",
-                backdropFilter: "blur(10px)",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background =
-                  "rgba(249,168,37,0.25)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background =
-                  "rgba(249,168,37,0.12)";
-              }}
-            >
-              View Full Collection
-            </button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════ GALLERY ══════════════ */}
-      <section
-        style={{
-          background: "#0a0e1a",
-          padding: "100px 0",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="text-center mb-16">
-            <p
-              className="text-xs tracking-[0.4em] mb-4"
-              style={{
-                color: "rgba(249,168,37,0.7)",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              VISUAL JOURNEY
-            </p>
-            <h2
-              className="text-3xl md:text-4xl font-bold"
-              style={{
-                fontFamily: "'Cinzel Decorative', serif",
-                color: "#f9a825",
-                textShadow: "0 0 20px rgba(249,168,37,0.3)",
-              }}
-            >
-              Sacred Gallery
-            </h2>
-          </motion.div>
-
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-            data-ocid="home.gallery.list"
-          >
-            {GALLERY_ITEMS.map((item, i) => (
-              <motion.div
-                key={item.label}
-                {...fadeUp}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                onMouseEnter={() => setHoveredGallery(i)}
-                onMouseLeave={() => setHoveredGallery(null)}
-                data-ocid={`home.gallery.item.${i + 1}`}
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(124,58,237,0.2) 0%, rgba(249,168,37,0.1) 100%)",
-                  border:
-                    hoveredGallery === i
-                      ? "1px solid rgba(249,168,37,0.6)"
-                      : "1px solid rgba(249,168,37,0.15)",
-                  borderRadius: "16px",
-                  height: "200px",
-                  cursor: "pointer",
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow:
-                    hoveredGallery === i
-                      ? "0 0 40px rgba(249,168,37,0.3), inset 0 0 40px rgba(124,58,237,0.1)"
-                      : "none",
-                  transform: hoveredGallery === i ? "scale(1.02)" : "scale(1)",
-                  transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: hoveredGallery === i ? 0 : 1,
-                    transition: "opacity 0.3s ease",
-                  }}
-                >
-                  <span style={{ fontSize: "2.5rem", marginBottom: "8px" }}>
-                    ✦
-                  </span>
                   <p
+                    className="text-sm font-bold"
                     style={{
-                      color: "rgba(249,168,37,0.8)",
                       fontFamily: "'Cinzel Decorative', serif",
-                      fontSize: "0.9rem",
-                      textAlign: "center",
-                      padding: "0 16px",
+                      color: "#D4AF37",
+                      fontSize: "0.75rem",
                     }}
                   >
-                    {item.label}
+                    {item.title}
                   </p>
                   <p
-                    style={{
-                      color: "rgba(200,216,240,0.5)",
-                      fontFamily: "Poppins, sans-serif",
-                      fontSize: "0.7rem",
-                      marginTop: "4px",
-                    }}
+                    className="text-xs"
+                    style={{ color: "rgba(245,240,232,0.7)" }}
                   >
                     {item.sub}
                   </p>
                 </div>
-                <div
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Lightbox */}
+        <AnimatePresence>
+          {lightboxImg !== null && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              style={{
+                background: "rgba(5,8,16,0.95)",
+                backdropFilter: "blur(20px)",
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setLightboxImg(null)}
+              data-ocid="gallery.modal"
+            >
+              <motion.div
+                className="relative max-w-4xl w-full max-h-[85vh]"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={GALLERY_IMAGES[lightboxImg].src}
+                  alt={GALLERY_IMAGES[lightboxImg].title}
+                  className="w-full h-full object-contain rounded-xl"
                   style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: hoveredGallery === i ? 1 : 0,
-                    transition: "opacity 0.3s ease",
-                    background: "rgba(5,8,16,0.5)",
-                    backdropFilter: "blur(4px)",
+                    maxHeight: "80vh",
+                    border: "1px solid rgba(212,175,55,0.4)",
                   }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setLightboxImg(null)}
+                  className="absolute -top-4 -right-4 w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                  style={{
+                    background: "rgba(13,13,43,0.9)",
+                    border: "1px solid rgba(212,175,55,0.5)",
+                    color: "#D4AF37",
+                  }}
+                  data-ocid="gallery.close_button"
                 >
+                  ✕
+                </button>
+                <div className="mt-4 text-center">
                   <p
                     style={{
-                      color: "#f9a825",
                       fontFamily: "'Cinzel Decorative', serif",
-                      fontSize: "1rem",
-                      textAlign: "center",
-                      padding: "0 16px",
+                      color: "#D4AF37",
+                      fontSize: "0.9rem",
                     }}
                   >
-                    {item.label}
+                    {GALLERY_IMAGES[lightboxImg].title}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate("products")}
-                    className="mt-4 px-5 py-2 rounded-full text-xs tracking-wider"
+                  <p
                     style={{
-                      background: "rgba(249,168,37,0.2)",
-                      border: "1px solid rgba(249,168,37,0.5)",
-                      color: "#f9a825",
-                      fontFamily: "Poppins, sans-serif",
+                      color: "rgba(245,240,232,0.6)",
+                      fontSize: "0.8rem",
+                      marginTop: "4px",
                     }}
                   >
-                    View Collection
-                  </button>
+                    {GALLERY_IMAGES[lightboxImg].sub}
+                  </p>
                 </div>
               </motion.div>
-            ))}
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
-      {/* ══════════════ HOW IT WORKS ══════════════ */}
+      {/* ═══════════════════════════════════════
+          CONTACT / BOOKING SECTION
+      ═══════════════════════════════════════ */}
       <section
-        style={{
-          background: "linear-gradient(180deg, #0a0e1a 0%, #0d1220 100%)",
-          padding: "100px 0",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="text-center mb-16">
-            <p
-              className="text-xs tracking-[0.4em] mb-4"
-              style={{
-                color: "rgba(249,168,37,0.7)",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              THE PROCESS
-            </p>
-            <h2
-              className="text-3xl md:text-4xl font-bold"
-              style={{
-                fontFamily: "'Cinzel Decorative', serif",
-                color: "#f9a825",
-                textShadow: "0 0 20px rgba(249,168,37,0.3)",
-              }}
-            >
-              How It Works
-            </h2>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              {
-                num: "01",
-                title: "Browse",
-                desc: "Explore handpicked outfits curated for weddings, festivals, and sacred celebrations.",
-                icon: "🌸",
-              },
-              {
-                num: "02",
-                title: "Select Dates",
-                desc: "Choose your rental period from 3 to 10 days at your convenience.",
-                icon: "📅",
-              },
-              {
-                num: "03",
-                title: "Book & Pay",
-                desc: "Secure checkout with instant booking confirmation.",
-                icon: "✨",
-              },
-              {
-                num: "04",
-                title: "Wear & Return",
-                desc: "Enjoy your divine outfit and return it to our store after your celebration.",
-                icon: "🙏",
-              },
-            ].map((step, i) => (
-              <motion.div
-                key={step.num}
-                {...fadeUp}
-                transition={{ duration: 0.6, delay: i * 0.12 }}
-                data-ocid={`home.step.item.${i + 1}`}
-                className="text-center p-6 rounded-2xl"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(249,168,37,0.15)",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <div className="text-3xl mb-3">{step.icon}</div>
-                <p
-                  className="text-4xl font-bold mb-2"
-                  style={{
-                    fontFamily: "'Cinzel Decorative', serif",
-                    color: "rgba(249,168,37,0.3)",
-                  }}
-                >
-                  {step.num}
-                </p>
-                <h3
-                  className="font-bold text-base mb-2"
-                  style={{
-                    color: "#f9a825",
-                    fontFamily: "'Cinzel Decorative', serif",
-                  }}
-                >
-                  {step.title}
-                </h3>
-                <p
-                  className="text-xs leading-relaxed"
-                  style={{
-                    color: "rgba(200,216,240,0.7)",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                >
-                  {step.desc}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════ CONTACT / BOOKING ══════════════ */}
-      <section
+        className="relative py-24 md:py-32 overflow-hidden"
         style={{
           background:
-            "radial-gradient(ellipse at center, #0d1530 0%, #050810 100%)",
-          padding: "100px 0",
-          position: "relative",
-          zIndex: 10,
-          overflow: "hidden",
+            "linear-gradient(135deg, #050810 0%, #0a1628 50%, #050810 100%)",
         }}
+        data-ocid="contact.section"
       >
-        {/* Decorative moon glow behind form */}
+        {/* Top deco */}
         <div
+          className="absolute top-0 left-0 right-0 h-px"
           style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "600px",
-            height: "600px",
-            borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)",
-            pointerEvents: "none",
+              "linear-gradient(to right, transparent, #D4AF37, transparent)",
           }}
         />
 
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <motion.div {...fadeUp} className="text-center mb-12">
+        {/* Lotus decorators */}
+        <div
+          className="absolute top-8 left-1/2 -translate-x-1/2 text-3xl opacity-30"
+          style={{ animation: "floatUp 4s ease-in-out infinite" }}
+        >
+          🪷
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 md:px-8">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
             <p
-              className="text-xs tracking-[0.4em] mb-4"
-              style={{
-                color: "rgba(249,168,37,0.7)",
-                fontFamily: "Poppins, sans-serif",
-              }}
+              className="text-xs tracking-widest mb-3"
+              style={{ color: "#D4AF37", letterSpacing: "0.3em" }}
             >
-              GET IN TOUCH
+              ✦ REACH US ✦
             </p>
             <h2
               className="text-3xl md:text-4xl font-bold"
               style={{
                 fontFamily: "'Cinzel Decorative', serif",
-                color: "#f9a825",
-                textShadow: "0 0 20px rgba(249,168,37,0.3)",
+                color: "#ffe082",
+                textShadow: "0 0 20px rgba(212,175,55,0.3)",
               }}
             >
-              Book Your Divine Look
+              Visit Our Sacred Space
             </h2>
           </motion.div>
 
-          <motion.div
-            {...fadeUp}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(249,168,37,0.2)",
-              borderRadius: "24px",
-              backdropFilter: "blur(20px)",
-              padding: "clamp(24px, 5vw, 48px)",
-            }}
-            data-ocid="home.contact.panel"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label
-                  htmlFor="contact-name"
-                  className="block text-xs tracking-wider mb-2"
-                  style={{
-                    color: "rgba(200,216,240,0.7)",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                >
-                  Full Name
-                </label>
-                <input
-                  id="contact-name"
-                  type="text"
-                  placeholder="Your name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, name: e.target.value }))
-                  }
-                  data-ocid="home.contact.name.input"
-                  className="w-full px-4 py-3 text-sm outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: "12px",
-                    color: "#e8f4ff",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "rgba(249,168,37,0.5)";
-                    e.target.style.boxShadow = "0 0 12px rgba(249,168,37,0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(255,255,255,0.15)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="contact-email"
-                  className="block text-xs tracking-wider mb-2"
-                  style={{
-                    color: "rgba(200,216,240,0.7)",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                >
-                  Email Address
-                </label>
-                <input
-                  id="contact-email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, email: e.target.value }))
-                  }
-                  data-ocid="home.contact.email.input"
-                  className="w-full px-4 py-3 text-sm outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: "12px",
-                    color: "#e8f4ff",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "rgba(249,168,37,0.5)";
-                    e.target.style.boxShadow = "0 0 12px rgba(249,168,37,0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(255,255,255,0.15)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="contact-phone"
-                className="block text-xs tracking-wider mb-2"
-                style={{
-                  color: "rgba(200,216,240,0.7)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                Phone Number
-              </label>
-              <input
-                id="contact-phone"
-                type="tel"
-                placeholder="Your phone number"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, phone: e.target.value }))
-                }
-                data-ocid="home.contact.phone.input"
-                className="w-full px-4 py-3 text-sm outline-none transition-all"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: "12px",
-                  color: "#e8f4ff",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "rgba(249,168,37,0.5)";
-                  e.target.style.boxShadow = "0 0 12px rgba(249,168,37,0.1)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "rgba(255,255,255,0.15)";
-                  e.target.style.boxShadow = "none";
-                }}
-              />
-            </div>
-            <div className="mb-6">
-              <label
-                htmlFor="contact-message"
-                className="block text-xs tracking-wider mb-2"
-                style={{
-                  color: "rgba(200,216,240,0.7)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                Message
-              </label>
-              <textarea
-                id="contact-message"
-                rows={4}
-                placeholder="Tell us about the occasion, your size preference, or any questions..."
-                value={formData.message}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, message: e.target.value }))
-                }
-                data-ocid="home.contact.message.textarea"
-                className="w-full px-4 py-3 text-sm outline-none resize-none transition-all"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: "12px",
-                  color: "#e8f4ff",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "rgba(249,168,37,0.5)";
-                  e.target.style.boxShadow = "0 0 12px rgba(249,168,37,0.1)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "rgba(255,255,255,0.15)";
-                  e.target.style.boxShadow = "none";
-                }}
-              />
-            </div>
-            <button
-              type="button"
-              data-ocid="home.contact.submit_button"
-              className="w-full py-4 rounded-xl text-sm font-bold tracking-widest transition-all hover:scale-[1.02] hover:shadow-xl"
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Contact Info */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="rounded-2xl p-8"
               style={{
-                background: "linear-gradient(135deg, #f9a825, #f57f17)",
-                color: "#050810",
-                fontFamily: "Poppins, sans-serif",
-                boxShadow: "0 4px 20px rgba(249,168,37,0.3)",
+                background: "rgba(13,13,43,0.6)",
+                border: "1px solid rgba(212,175,55,0.3)",
+                backdropFilter: "blur(20px)",
               }}
             >
-              ✦ Send Message
-            </button>
+              <h3
+                className="text-lg font-bold mb-6"
+                style={{
+                  fontFamily: "'Cinzel Decorative', serif",
+                  color: "#D4AF37",
+                  fontSize: "1rem",
+                }}
+              >
+                🪔 Find Us
+              </h3>
+              <div className="space-y-5">
+                {[
+                  { icon: "👤", label: "Owner", value: "Rekha Khemka" },
+                  {
+                    icon: "📍",
+                    label: "Address",
+                    value: "Ganesh Apartment 204, Near Gate 6, Birgunj",
+                  },
+                  {
+                    icon: "📞",
+                    label: "Phone",
+                    value: "9811254719 · 9817266196",
+                  },
+                  {
+                    icon: "✉️",
+                    label: "Email",
+                    value: "kavyanshkhemka@gmail.com",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="flex gap-3">
+                    <span className="text-lg flex-shrink-0">{item.icon}</span>
+                    <div>
+                      <p
+                        className="text-xs tracking-wider mb-1"
+                        style={{ color: "rgba(212,175,55,0.6)" }}
+                      >
+                        {item.label.toUpperCase()}
+                      </p>
+                      <p
+                        style={{
+                          color: "rgba(245,240,232,0.9)",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        {item.value}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-            {/* Business info */}
-            <div
-              className="mt-8 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4"
-              style={{ borderTop: "1px solid rgba(249,168,37,0.15)" }}
-            >
-              {[
-                { label: "Shop", value: "Radhe Radhe Unique Collection" },
-                { label: "Owner", value: "Rekha Khemka" },
-                { label: "Email", value: "kavyanshkhemka@gmail.com" },
-                { label: "Contact", value: "9811254719 / 9817266196" },
-                {
-                  label: "Address",
-                  value: "Ganesh Apartment 204, Near Gate No. 6, Birgunj",
-                },
-              ].map((info) => (
-                <div key={info.label}>
-                  <p
-                    className="text-[10px] tracking-widest mb-1"
-                    style={{
-                      color: "rgba(249,168,37,0.6)",
-                      fontFamily: "Poppins, sans-serif",
-                    }}
-                  >
-                    {info.label.toUpperCase()}
-                  </p>
-                  <p
-                    className="text-sm"
-                    style={{
-                      color: "#c8d8f0",
-                      fontFamily: "Poppins, sans-serif",
-                    }}
-                  >
-                    {info.value}
-                  </p>
+              {/* Diya flicker effect */}
+              <div className="mt-8 flex items-center gap-3">
+                <div
+                  className="text-2xl"
+                  style={{ animation: "divaFlicker 1.5s ease-in-out infinite" }}
+                >
+                  🪔
                 </div>
-              ))}
-            </div>
-          </motion.div>
+                <p
+                  className="text-xs"
+                  style={{ color: "rgba(212,175,55,0.6)", lineHeight: "1.7" }}
+                >
+                  Open with love and devotion.
+                  <br />
+                  Every garment tells a divine story.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Booking Form */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.15 }}
+              className="rounded-2xl p-8"
+              style={{
+                background: "rgba(13,13,43,0.6)",
+                border: "1px solid rgba(212,175,55,0.3)",
+                backdropFilter: "blur(20px)",
+              }}
+            >
+              <h3
+                className="text-lg font-bold mb-6"
+                style={{
+                  fontFamily: "'Cinzel Decorative', serif",
+                  color: "#D4AF37",
+                  fontSize: "1rem",
+                }}
+              >
+                🌸 Book an Inquiry
+              </h3>
+              {formSent ? (
+                <motion.div
+                  className="text-center py-12"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  data-ocid="contact.success_state"
+                >
+                  <div className="text-5xl mb-4">🪷</div>
+                  <p
+                    style={{
+                      color: "#D4AF37",
+                      fontFamily: "'Cinzel Decorative', serif",
+                    }}
+                  >
+                    Message Received
+                  </p>
+                  <p
+                    className="mt-2 text-sm"
+                    style={{ color: "rgba(245,240,232,0.6)" }}
+                  >
+                    We'll reach out with divine haste.
+                  </p>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label
+                      htmlFor="contact-name"
+                      className="block text-xs tracking-wider mb-2"
+                      style={{ color: "rgba(212,175,55,0.7)" }}
+                    >
+                      YOUR NAME
+                    </label>
+                    <input
+                      id="contact-name"
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, name: e.target.value }))
+                      }
+                      placeholder="Full name"
+                      className="w-full px-4 py-3 text-sm outline-none transition-all duration-200"
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(212,175,55,0.3)",
+                        borderRadius: "8px",
+                        color: "#f5f0e8",
+                      }}
+                      data-ocid="contact.input"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="contact-phone"
+                      className="block text-xs tracking-wider mb-2"
+                      style={{ color: "rgba(212,175,55,0.7)" }}
+                    >
+                      PHONE NUMBER
+                    </label>
+                    <input
+                      id="contact-phone"
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, phone: e.target.value }))
+                      }
+                      placeholder="Your phone"
+                      className="w-full px-4 py-3 text-sm outline-none transition-all duration-200"
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(212,175,55,0.3)",
+                        borderRadius: "8px",
+                        color: "#f5f0e8",
+                      }}
+                      data-ocid="contact.input"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="contact-message"
+                      className="block text-xs tracking-wider mb-2"
+                      style={{ color: "rgba(212,175,55,0.7)" }}
+                    >
+                      MESSAGE
+                    </label>
+                    <textarea
+                      id="contact-message"
+                      required
+                      value={formData.message}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, message: e.target.value }))
+                      }
+                      placeholder="Tell us about your occasion..."
+                      rows={4}
+                      className="w-full px-4 py-3 text-sm outline-none transition-all duration-200 resize-none"
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(212,175,55,0.3)",
+                        borderRadius: "8px",
+                        color: "#f5f0e8",
+                      }}
+                      data-ocid="contact.textarea"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-3 text-sm tracking-widest transition-all duration-300 hover:scale-[1.02]"
+                    style={{
+                      background: "rgba(212,175,55,0.15)",
+                      border: "1px solid rgba(212,175,55,0.7)",
+                      color: "#D4AF37",
+                      borderRadius: "8px",
+                      fontFamily: "'Cinzel Decorative', serif",
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.15em",
+                      animation: "goldPulse 3s ease-in-out infinite",
+                    }}
+                    data-ocid="contact.submit_button"
+                  >
+                    ✦ Send Sacred Inquiry ✦
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Bottom lotus row */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 opacity-20">
+          {["🪷", "✦", "🪷", "✦", "🪷"].map((s, i) => (
+            <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: static decorative
+              key={`l${i}`}
+              style={{ color: "#D4AF37", fontSize: "1rem" }}
+            >
+              {s}
+            </span>
+          ))}
         </div>
       </section>
 
-      {/* ══════════════ FOOTER ══════════════ */}
-      <footer
+      {/* ═══════════════════════════════════════
+          FOOTER STRIP (inline on home)
+      ═══════════════════════════════════════ */}
+      <div
+        className="py-8 text-center"
         style={{
-          background: "#030508",
-          borderTop: "1px solid rgba(249,168,37,0.15)",
-          padding: "40px 0",
-          position: "relative",
-          zIndex: 10,
+          background: "#050810",
+          borderTop: "1px solid rgba(212,175,55,0.2)",
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <img
-            src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
-            alt="Radhe Radhe Unique Collection"
-            style={{
-              height: "48px",
-              width: "auto",
-              objectFit: "contain",
-              margin: "0 auto 16px",
-              filter: "drop-shadow(0 2px 8px rgba(249,168,37,0.3))",
-            }}
-          />
-          <p
-            className="text-xs tracking-widest mb-4"
-            style={{
-              color: "rgba(200,216,240,0.4)",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            ✦ RADHE RADHE UNIQUE COLLECTION ✦
-          </p>
-          <div className="flex flex-wrap gap-6 justify-center mb-6">
-            {[
-              { label: "Collection", page: "products" },
-              { label: "Categories", page: "categories" },
-              { label: "Wishlist", page: "wishlist" },
-              { label: "Contact", page: "contact" },
-            ].map((link) => (
-              <button
-                key={link.page}
-                type="button"
-                onClick={() => onNavigate(link.page)}
-                data-ocid={`footer.${link.page}_link`}
-                className="text-xs tracking-wider transition-all"
-                style={{
-                  color: "rgba(200,216,240,0.5)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLElement).style.color = "#f9a825";
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLElement).style.color =
-                    "rgba(200,216,240,0.5)";
-                }}
-              >
-                {link.label}
-              </button>
-            ))}
-          </div>
-          <p
-            className="text-xs"
-            style={{
-              color: "rgba(200,216,240,0.3)",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            © {new Date().getFullYear()}. Built with{" "}
-            <span style={{ color: "#f9a825" }}>♥</span> using{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "rgba(249,168,37,0.6)" }}
-            >
-              caffeine.ai
-            </a>
-          </p>
-        </div>
-      </footer>
-
-      {/* ══════════════ MUSIC TOGGLE ══════════════ */}
-      <button
-        type="button"
-        onClick={() => setMusicPlaying(!musicPlaying)}
-        data-ocid="home.music_toggle"
-        title={
-          musicPlaying
-            ? "Pause ambient flute music"
-            : "Play ambient flute music"
-        }
-        style={{
-          position: "fixed",
-          bottom: "24px",
-          right: "24px",
-          zIndex: 100,
-          width: "52px",
-          height: "52px",
-          borderRadius: "50%",
-          background: "rgba(249,168,37,0.15)",
-          border: "1px solid rgba(249,168,37,0.4)",
-          backdropFilter: "blur(10px)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          gap: "2px",
-          animation: musicPlaying
-            ? "musicPulse 1.5s ease-in-out infinite"
-            : "none",
-          transition: "background 0.3s ease",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.background =
-            "rgba(249,168,37,0.3)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.background =
-            "rgba(249,168,37,0.15)";
-        }}
-      >
-        {musicPlaying ? (
-          <Music size={18} color="#f9a825" />
-        ) : (
-          <VolumeX size={18} color="rgba(249,168,37,0.7)" />
-        )}
-        <span
-          style={{
-            fontSize: "8px",
-            color: "rgba(249,168,37,0.7)",
-            fontFamily: "Poppins, sans-serif",
-            lineHeight: 1,
-          }}
+        <p
+          className="text-xs"
+          style={{ color: "rgba(212,175,55,0.5)", letterSpacing: "0.2em" }}
         >
-          Flute
-        </span>
-      </button>
+          © {new Date().getFullYear()} Radhe Radhe Unique Collection · Rekha
+          Khemka · Birgunj
+        </p>
+        <a
+          href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs mt-2 inline-block"
+          style={{ color: "rgba(245,240,232,0.3)" }}
+        >
+          Built with ♥ using caffeine.ai
+        </a>
+      </div>
     </div>
   );
 }
