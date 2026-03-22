@@ -88,7 +88,7 @@ export default function Cart({ onNavigate }: CartProps) {
                     {item.productName}
                   </h3>
                   <p className="text-xs text-muted-foreground font-sans-body mb-2">
-                    {item.size} · {item.color}
+                    {item.size}
                   </p>
                   <p className="text-xs text-muted-foreground font-sans-body">
                     {item.startDate} → {item.endDate} ({item.rentalDays} days)
@@ -145,7 +145,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 </div>
                 {couponMsg && (
                   <p
-                    className={`text-xs font-sans-body mt-2 ${couponMsg.startsWith("✓") ? "text-green-700" : "text-destructive"}`}
+                    className={`text-xs font-sans-body mt-2 ${couponMsg.startsWith("✓") ? "text-black" : "text-destructive"}`}
                   >
                     {couponMsg}
                   </p>
@@ -178,7 +178,7 @@ export default function Cart({ onNavigate }: CartProps) {
                   <span>₹{totalDeposit.toLocaleString()}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-green-700">
+                  <div className="flex justify-between text-black">
                     <span>Discount</span>
                     <span>-₹{discount.toLocaleString()}</span>
                   </div>

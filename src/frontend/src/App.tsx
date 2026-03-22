@@ -36,7 +36,7 @@ export default function App() {
   }, []);
 
   const noFooterPages = ["admin", "login"];
-  const noHeaderPages = ["admin"];
+  const noHeaderPages = ["admin", "home"];
 
   const renderPage = () => {
     switch (route.page) {

@@ -33,13 +33,13 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="font-display text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="font-display text-2xl font-bold text-black mb-4">
             Your cart is empty
           </h2>
           <button
             type="button"
             onClick={() => onNavigate("products")}
-            className="bg-rose-700 text-white px-8 py-3 rounded-full font-semibold"
+            className="bg-rose-700 text-black px-8 py-3 rounded-full font-semibold"
           >
             Browse Collection
           </button>
@@ -53,7 +53,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
     try {
       const items = cart.map((item) => ({
         productName: item.productName,
-        productDescription: `${item.rentalDays} days rental - ${item.size} / ${item.color}`,
+        productDescription: `${item.rentalDays} days rental - ${item.size}`,
         quantity: BigInt(1),
         priceInCents: BigInt(
           Math.round(
@@ -106,7 +106,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="font-display text-3xl font-bold text-gray-900 mb-8">
+        <h1 className="font-display text-3xl font-bold text-black mb-8">
           Checkout
         </h1>
 
@@ -117,8 +117,8 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                   s <= step
-                    ? "bg-rose-700 text-white"
-                    : "bg-gray-200 text-gray-500"
+                    ? "bg-rose-700 text-black"
+                    : "bg-gray-200 text-black"
                 }`}
               >
                 {s}
@@ -130,7 +130,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
               )}
             </div>
           ))}
-          <div className="ml-4 text-sm text-gray-500">
+          <div className="ml-4 text-sm text-black">
             {step === 1
               ? "Delivery Address"
               : step === 2
@@ -144,7 +144,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
             {/* Step 1: Address */}
             {step === 1 && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <h2 className="font-semibold text-gray-900 mb-4">
+                <h2 className="font-semibold text-black mb-4">
                   Delivery Address
                 </h2>
                 <div
@@ -154,7 +154,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="checkout-name"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       Full Name
                     </label>
@@ -171,7 +171,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="checkout-phone"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       Phone Number
                     </label>
@@ -188,7 +188,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="checkout-street"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       Street Address
                     </label>
@@ -205,7 +205,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <div>
                     <label
                       htmlFor="checkout-city"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       City
                     </label>
@@ -222,7 +222,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <div>
                     <label
                       htmlFor="checkout-state"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       State
                     </label>
@@ -239,7 +239,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <div>
                     <label
                       htmlFor="checkout-pin"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       PIN Code
                     </label>
@@ -257,7 +257,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="mt-5 bg-rose-700 text-white px-8 py-3 rounded-full font-semibold hover:bg-rose-800 transition-colors"
+                  className="mt-5 bg-rose-700 text-black px-8 py-3 rounded-full font-semibold hover:bg-rose-800 transition-colors"
                 >
                   Continue to Review
                 </button>
@@ -267,7 +267,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
             {/* Step 2: Review */}
             {step === 2 && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <h2 className="font-semibold text-gray-900 mb-4">
+                <h2 className="font-semibold text-black mb-4">
                   Review Your Order
                 </h2>
                 <div className="space-y-3 mb-5">
@@ -282,17 +282,15 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                         className="w-16 h-20 object-cover rounded-lg"
                       />
                       <div className="text-sm">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-black">
                           {item.productName}
                         </p>
-                        <p className="text-gray-500">
-                          {item.size} | {item.color}
-                        </p>
-                        <p className="text-gray-500">
+                        <p className="text-black">{item.size}</p>
+                        <p className="text-black">
                           {item.startDate} to {item.endDate} ({item.rentalDays}{" "}
                           days)
                         </p>
-                        <p className="font-semibold text-rose-700">
+                        <p className="font-semibold text-black">
                           ₹
                           {(
                             item.pricePerDay * item.rentalDays +
@@ -304,10 +302,8 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   ))}
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 text-sm mb-4">
-                  <p className="font-medium text-gray-900 mb-1">
-                    Delivering to:
-                  </p>
-                  <p className="text-gray-600">
+                  <p className="font-medium text-black mb-1">Delivering to:</p>
+                  <p className="text-black">
                     {address.name}, {address.street}, {address.city}{" "}
                     {address.pincode}
                   </p>
@@ -323,7 +319,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                   <button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="bg-rose-700 text-white px-8 py-2.5 rounded-full font-semibold hover:bg-rose-800"
+                    className="bg-rose-700 text-black px-8 py-2.5 rounded-full font-semibold hover:bg-rose-800"
                   >
                     Continue to Payment
                   </button>
@@ -334,8 +330,8 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
             {/* Step 3: Payment */}
             {step === 3 && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <h2 className="font-semibold text-gray-900 mb-4">Payment</h2>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-sm text-blue-700">
+                <h2 className="font-semibold text-black mb-4">Payment</h2>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-sm text-black">
                   <p>
                     You will be redirected to Stripe secure payment page to
                     complete your booking.
@@ -354,7 +350,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
                     onClick={handlePayment}
                     data-ocid="checkout.payment_button"
                     disabled={loading}
-                    className="flex-1 bg-rose-700 text-white py-3 rounded-full font-semibold hover:bg-rose-800 transition-colors disabled:opacity-60"
+                    className="flex-1 bg-rose-700 text-black py-3 rounded-full font-semibold hover:bg-rose-800 transition-colors disabled:opacity-60"
                   >
                     {loading
                       ? "Processing..."
@@ -367,29 +363,25 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
 
           {/* Summary Sidebar */}
           <div className="bg-white rounded-2xl p-5 border border-gray-100 h-fit">
-            <h3 className="font-semibold text-gray-900 mb-4">Summary</h3>
+            <h3 className="font-semibold text-black mb-4">Summary</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Rental Total</span>
+                <span className="text-black">Rental Total</span>
                 <span>₹{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Security Deposit</span>
+                <span className="text-black">Security Deposit</span>
                 <span>₹{totalDeposit.toLocaleString()}</span>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-black">
                   <span>Discount ({couponCode})</span>
                   <span>-₹{discount.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-gray-600">Delivery</span>
-                <span className="text-green-600">Free</span>
-              </div>
               <div className="border-t pt-2 flex justify-between font-bold text-base">
                 <span>Total</span>
-                <span className="text-rose-700">₹{total.toLocaleString()}</span>
+                <span className="text-black">₹{total.toLocaleString()}</span>
               </div>
             </div>
           </div>

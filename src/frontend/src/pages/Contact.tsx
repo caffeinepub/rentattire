@@ -15,7 +15,7 @@ export default function Contact() {
   const faqs = [
     {
       q: "How does the rental process work?",
-      a: "Browse our collection, select your outfit, choose your rental dates (3-10 days), add to cart, and checkout. We deliver 1 day before your start date and pickup after your event.",
+      a: "Browse our collection, select your outfit, choose your rental dates (3-10 days), add to cart, and checkout. Please arrange to collect and return the outfit to our store.",
     },
     {
       q: "Is the security deposit refundable?",
@@ -61,25 +61,23 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <div className="bg-rose-700 text-white py-12 text-center">
+      <div className="bg-rose-700 text-black py-12 text-center">
         <h1 className="font-display text-4xl font-bold mb-2">Contact Us</h1>
-        <p className="text-rose-100">We're here to help you look your best</p>
+        <p className="text-black">We're here to help you look your best</p>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
           {/* Contact Form */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="font-display text-2xl font-bold text-gray-900 mb-5">
+            <h2 className="font-display text-2xl font-bold text-black mb-5">
               Send a Message
             </h2>
             {submitted ? (
               <div className="text-center py-8">
                 <div className="text-5xl mb-3">✅</div>
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  Message Sent!
-                </h3>
-                <p className="text-gray-500 text-sm">
+                <h3 className="font-semibold text-black mb-1">Message Sent!</h3>
+                <p className="text-black text-sm">
                   We'll get back to you within 24 hours.
                 </p>
               </div>
@@ -89,7 +87,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="contact-name"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       Name
                     </label>
@@ -102,7 +100,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="contact-email"
-                      className="text-sm font-medium text-gray-700 block mb-1"
+                      className="text-sm font-medium text-black block mb-1"
                     >
                       Email
                     </label>
@@ -117,7 +115,7 @@ export default function Contact() {
                 <div>
                   <label
                     htmlFor="contact-subject"
-                    className="text-sm font-medium text-gray-700 block mb-1"
+                    className="text-sm font-medium text-black block mb-1"
                   >
                     Subject
                   </label>
@@ -130,7 +128,7 @@ export default function Contact() {
                 <div>
                   <label
                     htmlFor="contact-message"
-                    className="text-sm font-medium text-gray-700 block mb-1"
+                    className="text-sm font-medium text-black block mb-1"
                   >
                     Message
                   </label>
@@ -144,7 +142,7 @@ export default function Contact() {
                 <button
                   type="button"
                   onClick={() => setSubmitted(true)}
-                  className="w-full bg-rose-700 text-white py-3 rounded-full font-semibold hover:bg-rose-800 transition-colors"
+                  className="w-full bg-rose-700 text-black py-3 rounded-full font-semibold hover:bg-rose-800 transition-colors"
                 >
                   Send Message
                 </button>
@@ -160,14 +158,14 @@ export default function Contact() {
                 className="bg-white rounded-2xl border border-gray-100 p-5 flex gap-4"
               >
                 <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <item.icon size={18} className="text-rose-700" />
+                  <item.icon size={18} className="text-black" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">
+                  <h3 className="font-semibold text-black text-sm mb-1">
                     {item.title}
                   </h3>
                   {item.info.map((line) => (
-                    <p key={line} className="text-sm text-gray-500">
+                    <p key={line} className="text-sm text-black">
                       {line}
                     </p>
                   ))}
@@ -179,7 +177,7 @@ export default function Contact() {
 
         {/* FAQ */}
         <div>
-          <h2 className="font-display text-2xl font-bold text-gray-900 mb-5">
+          <h2 className="font-display text-2xl font-bold text-black mb-5">
             Frequently Asked Questions
           </h2>
           <div className="space-y-3">
@@ -193,17 +191,17 @@ export default function Contact() {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex justify-between items-center px-5 py-4 text-left"
                 >
-                  <span className="font-medium text-gray-900 text-sm">
+                  <span className="font-medium text-black text-sm">
                     {faq.q}
                   </span>
                   {openFaq === i ? (
-                    <ChevronUp size={16} className="text-gray-400" />
+                    <ChevronUp size={16} className="text-black" />
                   ) : (
-                    <ChevronDown size={16} className="text-gray-400" />
+                    <ChevronDown size={16} className="text-black" />
                   )}
                 </button>
                 {openFaq === i && (
-                  <div className="px-5 pb-4 text-sm text-gray-600 border-t border-gray-50">
+                  <div className="px-5 pb-4 text-sm text-black border-t border-gray-50">
                     {faq.a}
                   </div>
                 )}

@@ -24,16 +24,14 @@ export default function ProductDetail({
   const { adminProducts, addToCart, toggleWishlist, isInWishlist } = useStore();
   const product = adminProducts.find((p) => p.id === productId);
   const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedColor] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [descOpen, setDescOpen] = useState(true);
   const [added, setAdded] = useState(false);
 
   if (!product)
-    return (
-      <div className="p-20 text-center text-gray-400">Product not found</div>
-    );
+    return <div className="p-20 text-center text-black">Product not found</div>;
 
   const productReviews = reviews.filter((r) => r.productId === productId);
   const inWishlist = isInWishlist(product.id);
@@ -54,10 +52,6 @@ export default function ProductDetail({
   const handleAddToCart = () => {
     if (!selectedSize) {
       alert("Please select a size");
-      return;
-    }
-    if (!selectedColor) {
-      alert("Please select a color");
       return;
     }
     if (!startDate || !endDate) {
@@ -89,11 +83,11 @@ export default function ProductDetail({
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Breadcrumb */}
-        <nav className="text-sm text-gray-400 mb-6">
+        <nav className="text-sm text-black mb-6">
           <button
             type="button"
             onClick={() => onNavigate("home")}
-            className="hover:text-rose-600"
+            className="hover:text-black"
           >
             Home
           </button>
@@ -101,12 +95,12 @@ export default function ProductDetail({
           <button
             type="button"
             onClick={() => onNavigate("products")}
-            className="hover:text-rose-600"
+            className="hover:text-black"
           >
             Products
           </button>
           <span className="mx-2">/</span>
-          <span className="text-gray-700">{product.name}</span>
+          <span className="text-black">{product.name}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -137,10 +131,10 @@ export default function ProductDetail({
 
           {/* Product Info */}
           <div>
-            <p className="text-rose-600 font-semibold text-sm mb-1">
+            <p className="text-black font-semibold text-sm mb-1">
               {product.designerName}
             </p>
-            <h1 className="font-display text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="font-display text-3xl font-bold text-black mb-2">
               {product.name}
             </h1>
 
@@ -153,14 +147,14 @@ export default function ProductDetail({
                     size={16}
                     className={
                       i < Math.round(product.rating)
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-gray-200"
+                        ? "fill-amber-400 text-black"
+                        : "text-black"
                     }
                   />
                 ))}
               </div>
               <span className="text-sm font-medium">{product.rating}</span>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-black">
                 ({product.reviewCount} reviews)
               </span>
             </div>
@@ -168,24 +162,24 @@ export default function ProductDetail({
             {/* Price */}
             <div className="bg-rose-50 rounded-xl p-4 mb-5">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-3xl font-bold text-rose-700">
+                <span className="text-3xl font-bold text-black">
                   ₹{product.pricePerDay.toLocaleString()}
                 </span>
-                <span className="text-gray-500">/day</span>
+                <span className="text-black">/day</span>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-black">
                 Security deposit: ₹{product.depositAmount.toLocaleString()}{" "}
                 (refundable)
               </p>
               {rentalDays > 0 && (
                 <div className="mt-2 pt-2 border-t border-rose-100">
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className="text-sm font-medium text-black">
                     Total Rental ({rentalDays} days):{" "}
-                    <span className="text-rose-700 font-bold">
+                    <span className="text-black font-bold">
                       ₹{totalRental.toLocaleString()}
                     </span>
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-black">
                     + Deposit ₹{product.depositAmount.toLocaleString()} ={" "}
                     <strong>
                       ₹{(totalRental + product.depositAmount).toLocaleString()}
@@ -200,7 +194,7 @@ export default function ProductDetail({
               {product.occasions.map((occ) => (
                 <span
                   key={occ}
-                  className="bg-amber-50 text-amber-700 text-xs font-medium px-3 py-1 rounded-full border border-amber-200"
+                  className="bg-amber-50 text-black text-xs font-medium px-3 py-1 rounded-full border border-amber-200"
                 >
                   {occ}
                 </span>
@@ -209,7 +203,7 @@ export default function ProductDetail({
 
             {/* Size Selector */}
             <div className="mb-5">
-              <p className="font-semibold text-gray-900 mb-2">Size</p>
+              <p className="font-semibold text-black mb-2">Size</p>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((size) => (
                   <button
@@ -219,7 +213,7 @@ export default function ProductDetail({
                     data-ocid="product.size_select"
                     className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
                       selectedSize === size
-                        ? "bg-rose-700 text-white border-rose-700"
+                        ? "bg-rose-700 text-black border-rose-700"
                         : "border-gray-200 hover:border-rose-400"
                     }`}
                   >
@@ -229,38 +223,11 @@ export default function ProductDetail({
               </div>
             </div>
 
-            {/* Color Selector */}
-            <div className="mb-5">
-              <p className="font-semibold text-gray-900 mb-2">
-                Color:{" "}
-                <span className="font-normal text-gray-600">
-                  {selectedColor}
-                </span>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map((color) => (
-                  <button
-                    type="button"
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    data-ocid="product.color_select"
-                    className={`px-3 py-1.5 border rounded-full text-sm transition-colors ${
-                      selectedColor === color
-                        ? "bg-rose-700 text-white border-rose-700"
-                        : "border-gray-200 hover:border-rose-400"
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Rental Dates */}
             <div className="mb-5">
-              <p className="font-semibold text-gray-900 mb-2">
+              <p className="font-semibold text-black mb-2">
                 Rental Period{" "}
-                <span className="text-xs font-normal text-gray-400">
+                <span className="text-xs font-normal text-black">
                   (3–10 days)
                 </span>
               </p>
@@ -268,7 +235,7 @@ export default function ProductDetail({
                 <div>
                   <label
                     htmlFor="rental-start-date"
-                    className="text-xs text-gray-500 mb-1 block"
+                    className="text-xs text-black mb-1 block"
                   >
                     Start Date
                   </label>
@@ -284,7 +251,7 @@ export default function ProductDetail({
                 <div>
                   <label
                     htmlFor="rental-end-date"
-                    className="text-xs text-gray-500 mb-1 block"
+                    className="text-xs text-black mb-1 block"
                   >
                     Return Date
                   </label>
@@ -299,7 +266,7 @@ export default function ProductDetail({
                 </div>
               </div>
               {rentalDays > 0 && (rentalDays < 3 || rentalDays > 10) && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-black text-xs mt-1">
                   Rental period must be between 3 and 10 days
                 </p>
               )}
@@ -313,8 +280,8 @@ export default function ProductDetail({
                 data-ocid="product.add_to_cart_button"
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-semibold transition-all ${
                   added
-                    ? "bg-green-600 text-white"
-                    : "bg-rose-700 text-white hover:bg-rose-800"
+                    ? "bg-green-600 text-black"
+                    : "bg-rose-700 text-black hover:bg-rose-800"
                 }`}
               >
                 <ShoppingCart size={18} />
@@ -326,7 +293,7 @@ export default function ProductDetail({
                 data-ocid="product.wishlist_toggle"
                 className={`p-3 rounded-full border-2 transition-colors ${
                   inWishlist
-                    ? "bg-rose-50 border-rose-300 text-rose-600"
+                    ? "bg-rose-50 border-rose-300 text-black"
                     : "border-gray-200 hover:border-rose-300"
                 }`}
               >
@@ -335,18 +302,10 @@ export default function ProductDetail({
             </div>
 
             {/* Trust badges */}
-            <div className="grid grid-cols-3 gap-3 text-center text-xs text-gray-500">
+            <div className="flex justify-center text-center text-xs text-black">
               <div className="flex flex-col items-center gap-1">
-                <Shield size={18} className="text-green-600" />
+                <Shield size={18} className="text-black" />
                 <span>Sanitized & Verified</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Truck size={18} className="text-blue-600" />
-                <span>Free Delivery</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <RotateCcw size={18} className="text-amber-600" />
-                <span>Free Pickup</span>
               </div>
             </div>
           </div>
@@ -357,13 +316,13 @@ export default function ProductDetail({
           <button
             type="button"
             onClick={() => setDescOpen(!descOpen)}
-            className="w-full flex justify-between items-center px-6 py-4 bg-gray-50 font-semibold text-gray-900"
+            className="w-full flex justify-between items-center px-6 py-4 bg-gray-50 font-semibold text-black"
           >
             Description
             {descOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
           {descOpen && (
-            <div className="px-6 py-4 text-gray-600 text-sm leading-relaxed">
+            <div className="px-6 py-4 text-black text-sm leading-relaxed">
               {product.description}
             </div>
           )}
@@ -371,11 +330,11 @@ export default function ProductDetail({
 
         {/* Reviews */}
         <div className="mt-8">
-          <h2 className="font-display text-2xl font-bold text-gray-900 mb-5">
+          <h2 className="font-display text-2xl font-bold text-black mb-5">
             Customer Reviews
           </h2>
           {productReviews.length === 0 ? (
-            <p className="text-gray-400 text-sm">
+            <p className="text-black text-sm">
               No reviews yet. Be the first to review!
             </p>
           ) : (
@@ -383,14 +342,14 @@ export default function ProductDetail({
               {productReviews.map((rev) => (
                 <div key={rev.id} className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 bg-rose-100 rounded-full flex items-center justify-center text-rose-700 font-semibold text-sm">
+                    <div className="w-9 h-9 bg-rose-100 rounded-full flex items-center justify-center text-black font-semibold text-sm">
                       {rev.avatar}
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-gray-900">
+                      <p className="font-semibold text-sm text-black">
                         {rev.userName}
                       </p>
-                      <p className="text-xs text-gray-400">{rev.date}</p>
+                      <p className="text-xs text-black">{rev.date}</p>
                     </div>
                     <div className="ml-auto flex gap-0.5">
                       {Array.from({ length: 5 }, (_, i) => i).map((i) => (
@@ -399,14 +358,14 @@ export default function ProductDetail({
                           size={14}
                           className={
                             i < rev.rating
-                              ? "fill-amber-400 text-amber-400"
-                              : "text-gray-200"
+                              ? "fill-amber-400 text-black"
+                              : "text-black"
                           }
                         />
                       ))}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">{rev.comment}</p>
+                  <p className="text-sm text-black">{rev.comment}</p>
                 </div>
               ))}
             </div>

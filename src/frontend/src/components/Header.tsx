@@ -48,9 +48,13 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             type="button"
             onClick={() => onNavigate("home")}
             data-ocid="nav.home_link"
-            className="font-display text-2xl md:text-3xl font-bold tracking-tight text-foreground flex-shrink-0 mx-4 md:mx-8"
+            className="flex-shrink-0 mx-4 md:mx-8"
           >
-            RentAttire
+            <img
+              src="/assets/uploads/radhey-radhey-unique-colection-1.jpeg"
+              alt="Radhe Radhe Unique Collection"
+              className="h-12 md:h-16 w-auto object-contain"
+            />
           </button>
 
           {/* Right Icons */}

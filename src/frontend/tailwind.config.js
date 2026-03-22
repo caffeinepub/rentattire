@@ -16,8 +16,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Playfair Display", "Georgia", "serif"],
-        sans: ["General Sans", "Inter", "sans-serif"],
+        display: ["Cinzel Decorative", "Playfair Display", "Georgia", "serif"],
+        heading: ["Yeseva One", "Playfair Display", "Georgia", "serif"],
+        "sans-body": ["Poppins", "Inter", "sans-serif"],
+        sans: ["Poppins", "Inter", "sans-serif"],
       },
       colors: {
         border: "oklch(var(--border))",
@@ -72,12 +74,14 @@ export default {
         },
       },
       borderRadius: {
-        lg: "0rem",
-        md: "0rem",
-        sm: "0rem",
+        lg: "0.5rem",
+        md: "0.375rem",
+        sm: "0.25rem",
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
+        glow: "0 0 20px rgba(249,168,37,0.4), 0 4px 12px rgba(0,0,0,0.15)",
+        "glow-pink": "0 0 20px rgba(244,143,177,0.5), 0 4px 12px rgba(0,0,0,0.15)",
       },
       keyframes: {
         "accordion-down": {

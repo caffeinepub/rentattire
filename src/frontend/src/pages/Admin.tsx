@@ -49,12 +49,10 @@ const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 
 const emptyProductForm = {
   name: "",
-  designerName: "",
   categoryId: "",
   pricePerDay: "",
   depositAmount: "",
   sizes: [] as string[],
-  colors: "",
   occasions: "",
   description: "",
   imageUrl: "",
@@ -113,16 +111,16 @@ export default function Admin({ onNavigate }: AdminProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="font-display text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="font-display text-2xl font-bold text-black mb-2">
             Access Denied
           </h2>
-          <p className="text-gray-500 mb-4">
+          <p className="text-black mb-4">
             You need admin privileges to access this page.
           </p>
           <button
             type="button"
             onClick={() => onNavigate("home")}
-            className="bg-rose-700 text-white px-8 py-3 rounded-full font-semibold"
+            className="bg-rose-700 text-black px-8 py-3 rounded-full font-semibold"
           >
             Go Home
           </button>
@@ -145,12 +143,10 @@ export default function Admin({ onNavigate }: AdminProps) {
     setEditingProduct(p);
     setProductForm({
       name: p.name,
-      designerName: p.designerName,
       categoryId: p.categoryId,
       pricePerDay: String(p.pricePerDay),
       depositAmount: String(p.depositAmount),
       sizes: p.sizes,
-      colors: p.colors.join(", "),
       occasions: p.occasions.join(", "),
       description: p.description,
       imageUrl: p.images[0] ?? "",
@@ -229,15 +225,10 @@ export default function Admin({ onNavigate }: AdminProps) {
 
     const base = {
       name: productForm.name,
-      designerName: productForm.designerName,
       categoryId: productForm.categoryId,
       pricePerDay: Number(productForm.pricePerDay),
       depositAmount: Number(productForm.depositAmount),
       sizes: productForm.sizes.length ? productForm.sizes : ["Free Size"],
-      colors: productForm.colors
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
       occasions: productForm.occasions
         .split(",")
         .map((s) => s.trim())
@@ -247,6 +238,8 @@ export default function Admin({ onNavigate }: AdminProps) {
       rating: 4.5,
       reviewCount: 0,
       isAvailable: true,
+      designerName: "",
+      colors: [],
     };
     if (editingProduct) {
       updateProduct({ ...base, id: editingProduct.id });
@@ -357,19 +350,10 @@ export default function Admin({ onNavigate }: AdminProps) {
   function exportProducts() {
     exportToCSV(
       "rentattire-products",
-      [
-        "ID",
-        "Name",
-        "Designer",
-        "Category",
-        "Price/Day",
-        "Rating",
-        "Available",
-      ],
+      ["ID", "Name", "Category", "Price/Day", "Rating", "Available"],
       adminProducts.map((p) => [
         p.id,
         p.name,
-        p.designerName,
         categories.find((c) => c.id === p.categoryId)?.name ?? p.categoryId,
         String(p.pricePerDay),
         String(p.rating),
@@ -423,28 +407,28 @@ export default function Admin({ onNavigate }: AdminProps) {
           ? `+₹${thisMonthRevenue.toLocaleString("en-IN")} this month`
           : "No revenue this month",
       icon: BarChart3,
-      color: "bg-green-50 text-green-700",
+      color: "bg-green-50 text-black",
     },
     {
       label: "Active Rentals",
       value: String(activeRentals),
       change: activeRentals > 0 ? `${activeRentals} ongoing` : "None ongoing",
       icon: ShoppingBag,
-      color: "bg-blue-50 text-blue-700",
+      color: "bg-blue-50 text-black",
     },
     {
       label: "Total Products",
       value: String(adminProducts.length),
       change: `${adminProducts.length} total`,
       icon: Package,
-      color: "bg-purple-50 text-purple-700",
+      color: "bg-purple-50 text-black",
     },
     {
       label: "Registered Users",
       value: String(registeredUsers.length),
       change: `${registeredUsers.length} registered`,
       icon: Users,
-      color: "bg-amber-50 text-amber-700",
+      color: "bg-amber-50 text-black",
     },
   ];
 
@@ -474,20 +458,20 @@ export default function Admin({ onNavigate }: AdminProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Admin Header */}
-      <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+      <div className="bg-gray-900 text-black px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-rose-700 rounded-lg flex items-center justify-center">
             <BarChart3 size={16} />
           </div>
           <div>
             <p className="font-semibold">RentAttire Admin</p>
-            <p className="text-xs text-gray-400">Management Dashboard</p>
+            <p className="text-xs text-black">Management Dashboard</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => onNavigate("home")}
-          className="text-sm text-gray-400 hover:text-white"
+          className="text-sm text-black hover:text-black"
         >
           ← Back to Store
         </button>
@@ -504,8 +488,8 @@ export default function Admin({ onNavigate }: AdminProps) {
               data-ocid={tab.ocid}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
-                  ? "bg-rose-700 text-white"
-                  : "bg-white border border-gray-200 text-gray-700 hover:border-rose-400"
+                  ? "bg-rose-700 text-black"
+                  : "bg-white border border-gray-200 text-black hover:border-rose-400"
               }`}
             >
               <tab.icon size={15} />
@@ -528,21 +512,17 @@ export default function Admin({ onNavigate }: AdminProps) {
                   >
                     <stat.icon size={20} />
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <p className="text-sm text-gray-500">{stat.label}</p>
-                  <p className="text-xs text-green-600 mt-1">{stat.change}</p>
+                  <p className="text-2xl font-bold text-black">{stat.value}</p>
+                  <p className="text-sm text-black">{stat.label}</p>
+                  <p className="text-xs text-black mt-1">{stat.change}</p>
                 </div>
               ))}
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Recent Bookings
-              </h3>
+              <h3 className="font-semibold text-black mb-4">Recent Bookings</h3>
               {bookings.length === 0 ? (
                 <p
-                  className="text-gray-400 text-sm"
+                  className="text-black text-sm"
                   data-ocid="admin.bookings.empty_state"
                 >
                   No bookings yet.
@@ -555,17 +535,17 @@ export default function Admin({ onNavigate }: AdminProps) {
                       className="flex items-center justify-between py-2 border-b last:border-0"
                     >
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-black">
                           #{b.id}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-black">
                           {b.items.length} item(s)
                         </p>
                       </div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-black">
                         \u20b9{b.finalAmount.toLocaleString()}
                       </p>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize">
+                      <span className="text-xs bg-blue-100 text-black px-2 py-0.5 rounded-full capitalize">
                         {b.status}
                       </span>
                     </div>
@@ -580,7 +560,7 @@ export default function Admin({ onNavigate }: AdminProps) {
         {activeTab === "products" && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-black">
                 Products ({adminProducts.length})
               </h2>
               <div className="flex gap-2">
@@ -588,7 +568,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                   type="button"
                   data-ocid="admin.products.export_button"
                   onClick={exportProducts}
-                  className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-rose-700 transition-colors"
+                  className="flex items-center gap-1.5 border border-gray-300 text-black px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-black transition-colors"
                 >
                   <Download size={13} /> Export CSV
                 </button>
@@ -596,7 +576,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                   type="button"
                   data-ocid="admin.products.open_modal_button"
                   onClick={openAddProduct}
-                  className="flex items-center gap-2 bg-rose-700 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-rose-800"
+                  className="flex items-center gap-2 bg-rose-700 text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-rose-800"
                 >
                   <Plus size={16} /> Add Product
                 </button>
@@ -605,10 +585,9 @@ export default function Admin({ onNavigate }: AdminProps) {
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full" data-ocid="admin.products.table">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                  <thead className="bg-gray-50 text-xs text-black uppercase">
                     <tr>
                       <th className="text-left px-5 py-3">Product</th>
-                      <th className="text-left px-5 py-3">Designer</th>
                       <th className="text-left px-5 py-3">Category</th>
                       <th className="text-left px-5 py-3">Price/Day</th>
                       <th className="text-left px-5 py-3">Rating</th>
@@ -620,7 +599,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                       <tr>
                         <td
                           colSpan={6}
-                          className="px-5 py-8 text-center text-gray-400"
+                          className="px-5 py-8 text-center text-black"
                           data-ocid="admin.products.empty_state"
                         >
                           No products yet. Add your first product.
@@ -642,15 +621,12 @@ export default function Admin({ onNavigate }: AdminProps) {
                                 alt={p.name}
                                 className="w-10 h-12 object-cover rounded-lg"
                               />
-                              <span className="text-sm font-medium text-gray-900">
+                              <span className="text-sm font-medium text-black">
                                 {p.name}
                               </span>
                             </div>
                           </td>
-                          <td className="px-5 py-3 text-sm text-gray-600">
-                            {p.designerName}
-                          </td>
-                          <td className="px-5 py-3 text-sm text-gray-600">
+                          <td className="px-5 py-3 text-sm text-black">
                             {cat?.name}
                           </td>
                           <td className="px-5 py-3 text-sm font-medium">
@@ -665,7 +641,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                                 type="button"
                                 data-ocid={`admin.products.edit_button.${idx + 1}`}
                                 onClick={() => openEditProduct(p)}
-                                className="p-1.5 text-gray-400 hover:text-blue-600"
+                                className="p-1.5 text-black hover:text-black"
                                 title="Edit product"
                               >
                                 <Edit size={14} />
@@ -674,7 +650,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                                 type="button"
                                 data-ocid={`admin.products.delete_button.${idx + 1}`}
                                 onClick={() => setDeleteProductId(p.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-600"
+                                className="p-1.5 text-black hover:text-black"
                                 title="Delete product"
                               >
                                 <Trash2 size={14} />
@@ -695,12 +671,12 @@ export default function Admin({ onNavigate }: AdminProps) {
         {activeTab === "bookings" && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold text-gray-900">All Bookings</h2>
+              <h2 className="font-semibold text-black">All Bookings</h2>
               <button
                 type="button"
                 data-ocid="admin.bookings.export_button"
                 onClick={exportBookings}
-                className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-rose-700 transition-colors"
+                className="flex items-center gap-1.5 border border-gray-300 text-black px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-black transition-colors"
               >
                 <Download size={13} /> Export CSV
               </button>
@@ -708,7 +684,7 @@ export default function Admin({ onNavigate }: AdminProps) {
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               {bookings.length === 0 ? (
                 <div
-                  className="p-12 text-center text-gray-400"
+                  className="p-12 text-center text-black"
                   data-ocid="admin.bookings.empty_state"
                 >
                   <p>No bookings yet.</p>
@@ -716,7 +692,7 @@ export default function Admin({ onNavigate }: AdminProps) {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full" data-ocid="admin.bookings.table">
-                    <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <thead className="bg-gray-50 text-xs text-black uppercase">
                       <tr>
                         <th className="text-left px-5 py-3">Booking ID</th>
                         <th className="text-left px-5 py-3">Items</th>
@@ -731,20 +707,20 @@ export default function Admin({ onNavigate }: AdminProps) {
                           key={b.id}
                           data-ocid={`admin.bookings.row.${idx + 1}`}
                         >
-                          <td className="px-5 py-3 text-sm font-medium text-gray-900">
+                          <td className="px-5 py-3 text-sm font-medium text-black">
                             #{b.id}
                           </td>
-                          <td className="px-5 py-3 text-sm text-gray-600">
+                          <td className="px-5 py-3 text-sm text-black">
                             {b.items.length} item(s)
                           </td>
                           <td className="px-5 py-3 text-sm font-semibold">
                             \u20b9{b.finalAmount.toLocaleString()}
                           </td>
-                          <td className="px-5 py-3 text-sm text-gray-500">
+                          <td className="px-5 py-3 text-sm text-black">
                             {new Date(b.createdAt).toLocaleDateString("en-IN")}
                           </td>
                           <td className="px-5 py-3">
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize">
+                            <span className="text-xs bg-blue-100 text-black px-2 py-0.5 rounded-full capitalize">
                               {b.status}
                             </span>
                           </td>
@@ -762,14 +738,14 @@ export default function Admin({ onNavigate }: AdminProps) {
         {activeTab === "users" && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-black">
                 Users ({registeredUsers.length})
               </h2>
               <button
                 type="button"
                 data-ocid="admin.users.export_button"
                 onClick={exportUsers}
-                className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-rose-700 transition-colors"
+                className="flex items-center gap-1.5 border border-gray-300 text-black px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-black transition-colors"
               >
                 <Download size={13} /> Export CSV
               </button>
@@ -777,7 +753,7 @@ export default function Admin({ onNavigate }: AdminProps) {
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               {registeredUsers.length === 0 ? (
                 <div
-                  className="p-12 text-center text-gray-400"
+                  className="p-12 text-center text-black"
                   data-ocid="admin.users.empty_state"
                 >
                   <p>No users have logged in yet.</p>
@@ -785,7 +761,7 @@ export default function Admin({ onNavigate }: AdminProps) {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full" data-ocid="admin.users.table">
-                    <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <thead className="bg-gray-50 text-xs text-black uppercase">
                       <tr>
                         <th className="text-left px-5 py-3">Name</th>
                         <th className="text-left px-5 py-3">Email</th>
@@ -806,32 +782,32 @@ export default function Admin({ onNavigate }: AdminProps) {
                           >
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center text-rose-700 text-xs font-bold">
+                                <div className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center text-black text-xs font-bold">
                                   {u.name.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="text-sm font-medium text-gray-900">
+                                <span className="text-sm font-medium text-black">
                                   {u.name}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-5 py-3 text-sm text-gray-600">
+                            <td className="px-5 py-3 text-sm text-black">
                               {u.email}
                             </td>
                             <td className="px-5 py-3">
                               <span
                                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                                   u.role === "admin"
-                                    ? "bg-rose-100 text-rose-700"
-                                    : "bg-gray-100 text-gray-600"
+                                    ? "bg-rose-100 text-black"
+                                    : "bg-gray-100 text-black"
                                 }`}
                               >
                                 {u.role}
                               </span>
                             </td>
-                            <td className="px-5 py-3 text-sm text-gray-700 font-medium">
+                            <td className="px-5 py-3 text-sm text-black font-medium">
                               {u.loginCount}
                             </td>
-                            <td className="px-5 py-3 text-sm text-gray-500">
+                            <td className="px-5 py-3 text-sm text-black">
                               {new Date(u.lastLoginAt).toLocaleString("en-IN", {
                                 dateStyle: "medium",
                                 timeStyle: "short",
@@ -839,12 +815,12 @@ export default function Admin({ onNavigate }: AdminProps) {
                             </td>
                             <td className="px-5 py-3">
                               {isOnline ? (
-                                <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                                <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-black px-2 py-0.5 rounded-full font-medium">
                                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                                   Online
                                 </span>
                               ) : (
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-black">
                                   Last seen:{" "}
                                   {new Date(u.lastLoginAt).toLocaleDateString(
                                     "en-IN",
@@ -867,13 +843,13 @@ export default function Admin({ onNavigate }: AdminProps) {
         {activeTab === "coupons" && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold text-gray-900">Coupon Codes</h2>
+              <h2 className="font-semibold text-black">Coupon Codes</h2>
               <div className="flex gap-2">
                 <button
                   type="button"
                   data-ocid="admin.coupons.export_button"
                   onClick={exportCoupons}
-                  className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-rose-700 transition-colors"
+                  className="flex items-center gap-1.5 border border-gray-300 text-black px-3 py-1.5 rounded-full text-xs font-medium hover:border-rose-400 hover:text-black transition-colors"
                 >
                   <Download size={13} /> Export CSV
                 </button>
@@ -881,7 +857,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                   type="button"
                   data-ocid="admin.coupons.open_modal_button"
                   onClick={openAddCoupon}
-                  className="flex items-center gap-2 bg-rose-700 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-rose-800"
+                  className="flex items-center gap-2 bg-rose-700 text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-rose-800"
                 >
                   <Plus size={16} /> Add Coupon
                 </button>
@@ -889,7 +865,7 @@ export default function Admin({ onNavigate }: AdminProps) {
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <table className="w-full" data-ocid="admin.coupons.table">
-                <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                <thead className="bg-gray-50 text-xs text-black uppercase">
                   <tr>
                     <th className="text-left px-5 py-3">Code</th>
                     <th className="text-left px-5 py-3">Type</th>
@@ -904,7 +880,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                     <tr>
                       <td
                         colSpan={6}
-                        className="px-5 py-8 text-center text-gray-400"
+                        className="px-5 py-8 text-center text-black"
                         data-ocid="admin.coupons.empty_state"
                       >
                         No coupons yet.
@@ -913,24 +889,22 @@ export default function Admin({ onNavigate }: AdminProps) {
                   )}
                   {adminCoupons.map((c, i) => (
                     <tr key={c.code} data-ocid={`admin.coupons.row.${i + 1}`}>
-                      <td className="px-5 py-3 font-mono font-bold text-sm text-gray-900">
+                      <td className="px-5 py-3 font-mono font-bold text-sm text-black">
                         {c.code}
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">
-                        {c.type}
-                      </td>
-                      <td className="px-5 py-3 text-sm font-semibold text-rose-700">
+                      <td className="px-5 py-3 text-sm text-black">{c.type}</td>
+                      <td className="px-5 py-3 text-sm font-semibold text-black">
                         {c.value}
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">
+                      <td className="px-5 py-3 text-sm text-black">
                         {c.uses}/{c.maxUses}
                       </td>
                       <td className="px-5 py-3">
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                             c.status === "Active"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-500"
+                              ? "bg-green-100 text-black"
+                              : "bg-gray-100 text-black"
                           }`}
                         >
                           {c.status}
@@ -942,7 +916,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                             type="button"
                             data-ocid={`admin.coupons.edit_button.${i + 1}`}
                             onClick={() => openEditCoupon(c)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600"
+                            className="p-1.5 text-black hover:text-black"
                             title="Edit coupon"
                           >
                             <Edit size={14} />
@@ -951,7 +925,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                             type="button"
                             data-ocid={`admin.coupons.delete_button.${i + 1}`}
                             onClick={() => setDeleteCouponCode(c.code)}
-                            className="p-1.5 text-gray-400 hover:text-red-600"
+                            className="p-1.5 text-black hover:text-black"
                             title="Delete coupon"
                           >
                             <Trash2 size={14} />
@@ -990,20 +964,6 @@ export default function Admin({ onNavigate }: AdminProps) {
                     setProductForm((f) => ({ ...f, name: e.target.value }))
                   }
                   placeholder="e.g. Crimson Bridal Lehenga"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="prod-designer">Designer Name</Label>
-                <Input
-                  id="prod-designer"
-                  value={productForm.designerName}
-                  onChange={(e) =>
-                    setProductForm((f) => ({
-                      ...f,
-                      designerName: e.target.value,
-                    }))
-                  }
-                  placeholder="e.g. Manish Malhotra"
                 />
               </div>
               <div className="col-span-2">
@@ -1070,26 +1030,14 @@ export default function Admin({ onNavigate }: AdminProps) {
                     onClick={() => toggleSize(size)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                       productForm.sizes.includes(size)
-                        ? "bg-rose-700 text-white border-rose-700"
-                        : "border-gray-300 text-gray-600 hover:border-rose-400"
+                        ? "bg-rose-700 text-black border-rose-700"
+                        : "border-gray-300 text-black hover:border-rose-400"
                     }`}
                   >
                     {size}
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="prod-colors">Colors (comma-separated)</Label>
-              <Input
-                id="prod-colors"
-                value={productForm.colors}
-                onChange={(e) =>
-                  setProductForm((f) => ({ ...f, colors: e.target.value }))
-                }
-                placeholder="Red, Maroon, Pink"
-              />
             </div>
 
             <div>
@@ -1124,7 +1072,7 @@ export default function Admin({ onNavigate }: AdminProps) {
           <div className="space-y-2">
             <Label>
               Product Image{" "}
-              {!editingProduct && <span className="text-rose-600">*</span>}
+              {!editingProduct && <span className="text-black">*</span>}
             </Label>
             <label
               htmlFor="prod-image-upload"
@@ -1171,7 +1119,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                     alt="Preview"
                     className="mx-auto h-32 w-32 object-cover rounded-lg shadow-sm"
                   />
-                  <p className="text-xs text-rose-700 font-medium">
+                  <p className="text-xs text-black font-medium">
                     {imageFile ? imageFile.name : "Current image"} — click to
                     change
                   </p>
@@ -1186,19 +1134,19 @@ export default function Admin({ onNavigate }: AdminProps) {
                     alt="Current"
                     className="mx-auto h-32 w-32 object-cover rounded-lg shadow-sm"
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-black">
                     Current image — click to replace
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2 py-4">
                   <div className="mx-auto w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
-                    <Upload className="w-5 h-5 text-rose-600" />
+                    <Upload className="w-5 h-5 text-black" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className="text-sm font-medium text-black">
                     Click to upload or drag & drop
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-black">
                     PNG, JPG, WEBP up to 10MB
                   </p>
                 </div>
@@ -1209,7 +1157,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                 data-ocid="admin.product.loading_state"
                 className="space-y-1"
               >
-                <div className="flex justify-between text-xs text-gray-600">
+                <div className="flex justify-between text-xs text-black">
                   <span>Uploading image\u2026</span>
                   <span>{Math.round(uploadProgress)}%</span>
                 </div>
@@ -1235,7 +1183,7 @@ export default function Admin({ onNavigate }: AdminProps) {
             <Button
               data-ocid="admin.products.submit_button"
               onClick={submitProduct}
-              className="bg-rose-700 hover:bg-rose-800 text-white"
+              className="bg-rose-700 hover:bg-rose-800 text-black"
               disabled={uploadProgress !== null && uploadProgress < 100}
             >
               {editingProduct ? "Save Changes" : "Add Product"}
@@ -1253,7 +1201,7 @@ export default function Admin({ onNavigate }: AdminProps) {
           <DialogHeader>
             <DialogTitle>Delete Product</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-black">
             Are you sure you want to delete this product? This action cannot be
             undone.
           </p>
@@ -1362,7 +1310,7 @@ export default function Admin({ onNavigate }: AdminProps) {
             <Button
               data-ocid="admin.coupons.submit_button"
               onClick={submitCoupon}
-              className="bg-rose-700 hover:bg-rose-800 text-white"
+              className="bg-rose-700 hover:bg-rose-800 text-black"
             >
               {editingCoupon ? "Save Changes" : "Add Coupon"}
             </Button>
@@ -1379,7 +1327,7 @@ export default function Admin({ onNavigate }: AdminProps) {
           <DialogHeader>
             <DialogTitle>Delete Coupon</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-black">
             Are you sure you want to delete coupon{" "}
             <strong>{deleteCouponCode}</strong>? This action cannot be undone.
           </p>
