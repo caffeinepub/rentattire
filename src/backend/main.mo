@@ -11,8 +11,8 @@ actor {
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  // ── Product types ──────────────────────────────────────────────────────────
-  type Product = {
+  // ── Legacy type (kept for stable variable migration) ─────────────────────────
+  type ProductV1 = {
     id : Text;
     name : Text;
     categoryId : Text;
@@ -25,36 +25,56 @@ actor {
     isAvailable : Bool;
   };
 
-  // Stable product storage (persistent actor keeps this across upgrades)
-  let productMap : Map.Map<Text, Product> = Map.empty();
+  // ── Current product type ───────────────────────────────────────────────
+  type Product = {
+    id : Text;
+    name : Text;
+    pricePerDay : Float;
+    depositAmount : Float;
+    sizes : [Text];
+    occasions : [Text];
+    description : Text;
+    images : [Text];
+    isAvailable : Bool;
+    rating : Float;
+    reviewCount : Float;
+    designerName : Text;
+    colors : [Text];
+  };
+
+  // Legacy map kept so the runtime can drop it cleanly on upgrade
+  let productMap : Map.Map<Text, ProductV1> = Map.empty();
+
+  // Current product storage
+  let productMapV2 : Map.Map<Text, Product> = Map.empty();
 
   // ── Product CRUD ──────────────────────────────────────────────────────────
   public shared ({ caller = _ }) func addProduct(product : Product) : async Bool {
-    productMap.add(product.id, product);
+    productMapV2.add(product.id, product);
     true;
   };
 
   public shared ({ caller = _ }) func updateProduct(product : Product) : async Bool {
-    switch (productMap.get(product.id)) {
+    switch (productMapV2.get(product.id)) {
       case null false;
       case _ {
-        productMap.add(product.id, product);
+        productMapV2.add(product.id, product);
         true;
       };
     };
   };
 
   public shared ({ caller = _ }) func deleteProduct(id : Text) : async Bool {
-    productMap.remove(id);
+    productMapV2.remove(id);
     true;
   };
 
   public query func getProducts() : async [Product] {
-    productMap.values().toArray();
+    productMapV2.values().toArray();
   };
 
   public query func getProduct(id : Text) : async ?Product {
-    productMap.get(id);
+    productMapV2.get(id);
   };
 
   // ── Stripe ───────────────────────────────────────────────────────────────

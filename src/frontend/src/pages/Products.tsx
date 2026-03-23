@@ -1,16 +1,13 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
-import { categories } from "../data/products";
 import { useStore } from "../store/useStore";
 
 interface ProductsProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
-  initialCategory?: string;
   initialSearch?: string;
 }
 
-const allCategories = [{ id: "", name: "All" }, ...categories];
 const allSizes = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 const allOccasions = [
   "Wedding",
@@ -22,16 +19,9 @@ const allOccasions = [
   "Corporate",
 ];
 
-export default function Products({
-  onNavigate,
-  initialCategory,
-  initialSearch,
-}: ProductsProps) {
+export default function Products({ onNavigate, initialSearch }: ProductsProps) {
   const { adminProducts } = useStore();
   const [search, setSearch] = useState(initialSearch || "");
-  const [selectedCategory, setSelectedCategory] = useState(
-    initialCategory || "",
-  );
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000]);
@@ -56,8 +46,6 @@ export default function Products({
           p.name.toLowerCase().includes(search.toLowerCase()) ||
           p.designerName.toLowerCase().includes(search.toLowerCase()),
       );
-    if (selectedCategory)
-      result = result.filter((p) => p.categoryId === selectedCategory);
     if (selectedSizes.length)
       result = result.filter((p) =>
         p.sizes.some((s) => selectedSizes.includes(s)),
@@ -78,7 +66,6 @@ export default function Products({
   }, [
     adminProducts,
     search,
-    selectedCategory,
     selectedSizes,
     selectedOccasions,
     priceRange,
@@ -104,33 +91,6 @@ export default function Products({
           </p>
         </div>
       </div>
-
-      {/* Category pills */}
-      <div className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 overflow-x-auto py-4 scrollbar-hide">
-            {allCategories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                data-ocid="products.category.tab"
-                onClick={() => {
-                  setSelectedCategory(cat.id);
-                  setPage(1);
-                }}
-                className={`whitespace-nowrap px-4 py-1.5 text-xs tracking-wider font-sans-body border transition-colors flex-shrink-0 ${
-                  selectedCategory === cat.id
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-transparent text-foreground border-border hover:border-foreground"
-                }`}
-              >
-                {cat.name.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar */}
       <div className="border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
@@ -299,7 +259,6 @@ export default function Products({
               type="button"
               onClick={() => {
                 setSearch("");
-                setSelectedCategory("");
                 setSelectedSizes([]);
                 setSelectedOccasions([]);
                 setPriceRange([0, 3000]);

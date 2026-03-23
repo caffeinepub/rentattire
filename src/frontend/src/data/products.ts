@@ -15,7 +15,7 @@ export interface Product {
   id: string;
   name: string;
   designerName: string;
-  categoryId: string;
+  categoryId?: string;
   pricePerDay: number;
   depositAmount: number;
   sizes: string[];

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
+import { Toaster } from "./components/ui/sonner";
 import Admin from "./pages/Admin";
 import Cart from "./pages/Cart";
-import Categories from "./pages/Categories";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Contact from "./pages/Contact";
@@ -26,9 +26,13 @@ export default function App() {
   const [route, setRoute] = useState<RouteState>({ page: "home", params: {} });
   const fetchProducts = useStore((s) => s.fetchProducts);
 
-  // Fetch products from backend on startup so all users see the same catalog
+  // Fetch products from backend on startup and poll every 30s for live updates
   useEffect(() => {
     fetchProducts();
+    const interval = setInterval(() => {
+      fetchProducts();
+    }, 30000);
+    return () => clearInterval(interval);
   }, [fetchProducts]);
 
   const navigate = (page: string, params: Record<string, string> = {}) => {
@@ -62,15 +66,9 @@ export default function App() {
     switch (route.page) {
       case "home":
         return <Home onNavigate={navigate} />;
-      case "categories":
-        return <Categories onNavigate={navigate} />;
       case "products":
         return (
-          <Products
-            onNavigate={navigate}
-            initialCategory={route.params.category}
-            initialSearch={route.params.search}
-          />
+          <Products onNavigate={navigate} initialSearch={route.params.search} />
         );
       case "product-detail":
         return (
@@ -111,6 +109,7 @@ export default function App() {
       )}
       <main className="flex-1">{renderPage()}</main>
       {!noFooterPages.includes(route.page) && <Footer onNavigate={navigate} />}
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

@@ -17,7 +17,6 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
 
   const navLinks = [
     { label: "CATALOGUE", page: "products" },
-    { label: "CATEGORIES", page: "categories" },
     { label: "CONTACT", page: "contact" },
   ];
 

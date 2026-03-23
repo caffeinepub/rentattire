@@ -1,7 +1,9 @@
+import { Actor, HttpAgent } from "@icp-sdk/core/agent";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { createActorWithConfig } from "../config";
+import { loadConfig } from "../config";
 import type { Product } from "../data/products";
+import { idlFactory } from "../declarations/backend.did";
 
 export type { Product };
 
@@ -151,51 +153,40 @@ const VALID_COUPONS: Record<string, number> = {
   FASHION15: 0.15,
 };
 
+interface BackendProductRecord {
+  id: string;
+  name: string;
+  pricePerDay: number;
+  depositAmount: number;
+  sizes: string[];
+  occasions: string[];
+  description: string;
+  images: string[];
+  isAvailable: boolean;
+  rating: number;
+  reviewCount: number;
+  designerName: string;
+  colors: string[];
+}
+
 interface ActorWithProducts {
-  getProducts(): Promise<
-    Array<{
-      id: string;
-      name: string;
-      categoryId: string;
-      pricePerDay: number;
-      depositAmount: number;
-      sizes: string[];
-      occasions: string[];
-      description: string;
-      images: string[];
-      isAvailable: boolean;
-    }>
-  >;
-  addProduct(product: {
-    id: string;
-    name: string;
-    categoryId: string;
-    pricePerDay: number;
-    depositAmount: number;
-    sizes: string[];
-    occasions: string[];
-    description: string;
-    images: string[];
-    isAvailable: boolean;
-  }): Promise<boolean>;
-  updateProduct(product: {
-    id: string;
-    name: string;
-    categoryId: string;
-    pricePerDay: number;
-    depositAmount: number;
-    sizes: string[];
-    occasions: string[];
-    description: string;
-    images: string[];
-    isAvailable: boolean;
-  }): Promise<boolean>;
+  getProducts(): Promise<Array<BackendProductRecord>>;
+  addProduct(product: BackendProductRecord): Promise<boolean>;
+  updateProduct(product: BackendProductRecord): Promise<boolean>;
   deleteProduct(id: string): Promise<boolean>;
 }
 
-// Helper to get anonymous actor for product operations
-async function getActor() {
-  return createActorWithConfig() as unknown as ActorWithProducts;
+// Helper to get a raw ICP actor that includes all product methods
+async function getActor(): Promise<ActorWithProducts> {
+  const config = await loadConfig();
+  const agent = new HttpAgent({ host: config.backend_host });
+  if (config.backend_host?.includes("localhost")) {
+    await agent.fetchRootKey().catch(() => {});
+  }
+  return Actor.createActor(idlFactory, {
+    agent,
+    canisterId: config.backend_canister_id,
+  }) as unknown as ActorWithProducts;
 }
 
 export const useStore = create<StoreState>()(
@@ -298,17 +289,17 @@ export const useStore = create<StoreState>()(
           const products: Product[] = backendProducts.map((p) => ({
             id: p.id,
             name: p.name,
-            designerName: "",
-            categoryId: p.categoryId,
+            designerName: p.designerName ?? "",
+            categoryId: "",
             pricePerDay: Number(p.pricePerDay),
             depositAmount: Number(p.depositAmount),
             sizes: Array.from(p.sizes),
-            colors: [],
+            colors: Array.from(p.colors ?? []),
             occasions: Array.from(p.occasions),
             description: p.description,
             images: Array.from(p.images),
-            rating: 0,
-            reviewCount: 0,
+            rating: Number(p.rating ?? 0),
+            reviewCount: Number(p.reviewCount ?? 0),
             isAvailable: p.isAvailable,
           }));
           set({ adminProducts: products, productsLoaded: true });
@@ -326,7 +317,6 @@ export const useStore = create<StoreState>()(
           await actor.addProduct({
             id: product.id,
             name: product.name,
-            categoryId: product.categoryId,
             pricePerDay: product.pricePerDay,
             depositAmount: product.depositAmount,
             sizes: product.sizes,
@@ -334,6 +324,10 @@ export const useStore = create<StoreState>()(
             description: product.description,
             images: product.images,
             isAvailable: product.isAvailable,
+            rating: (product as any).rating ?? 4.5,
+            reviewCount: (product as any).reviewCount ?? 0,
+            designerName: (product as any).designerName ?? "",
+            colors: (product as any).colors ?? [],
           });
         } catch (err) {
           console.error("Failed to save product to backend:", err);
@@ -359,7 +353,6 @@ export const useStore = create<StoreState>()(
           await actor.updateProduct({
             id: product.id,
             name: product.name,
-            categoryId: product.categoryId,
             pricePerDay: product.pricePerDay,
             depositAmount: product.depositAmount,
             sizes: product.sizes,
@@ -367,6 +360,10 @@ export const useStore = create<StoreState>()(
             description: product.description,
             images: product.images,
             isAvailable: product.isAvailable,
+            rating: (product as any).rating ?? 4.5,
+            reviewCount: (product as any).reviewCount ?? 0,
+            designerName: (product as any).designerName ?? "",
+            colors: (product as any).colors ?? [],
           });
         } catch (err) {
           console.error("Failed to update product in backend:", err);

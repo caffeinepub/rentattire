@@ -77,7 +77,6 @@ export default function Footer({ onNavigate }: FooterProps) {
               {[
                 { label: "Home", page: "home" },
                 { label: "Catalogue", page: "products" },
-                { label: "Categories", page: "categories" },
                 { label: "Contact", page: "contact" },
               ].map((item) => (
                 <li key={item.page}>

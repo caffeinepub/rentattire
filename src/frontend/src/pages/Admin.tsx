@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { HttpAgent } from "@icp-sdk/core/agent";
 import {
   BarChart3,
   Download,
@@ -35,12 +34,9 @@ import { ImageIcon, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import imgLehenga from "../assets/product-lehenga.jpg";
-import { loadConfig } from "../config";
 import type { Product } from "../data/products";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useStore } from "../store/useStore";
 import type { AdminCoupon } from "../store/useStore";
-import { StorageClient } from "../utils/StorageClient";
 import { exportToCSV } from "../utils/csvExport";
 
 interface AdminProps {
@@ -51,7 +47,6 @@ const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 
 const emptyProductForm = {
   name: "",
-  categoryId: "",
   pricePerDay: "",
   depositAmount: "",
   sizes: [] as string[],
@@ -89,7 +84,6 @@ export default function Admin({ onNavigate }: AdminProps) {
     "overview" | "products" | "bookings" | "users" | "coupons" | "reviews"
   >("overview");
 
-  const { identity } = useInternetIdentity();
   const {
     user,
     bookings,
@@ -125,6 +119,11 @@ export default function Admin({ onNavigate }: AdminProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [productFormErrors, setProductFormErrors] = useState<{
+    name?: string;
+    pricePerDay?: string;
+  }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reviews state
@@ -163,6 +162,8 @@ export default function Admin({ onNavigate }: AdminProps) {
     setImageFile(null);
     setImagePreviewUrl(null);
     setUploadProgress(null);
+    setProductFormErrors({});
+    setIsSubmitting(false);
     setProductDialogOpen(true);
   }
 
@@ -170,7 +171,6 @@ export default function Admin({ onNavigate }: AdminProps) {
     setEditingProduct(p);
     setProductForm({
       name: p.name,
-      categoryId: p.categoryId,
       pricePerDay: String(p.pricePerDay),
       depositAmount: String(p.depositAmount),
       sizes: p.sizes,
@@ -181,6 +181,8 @@ export default function Admin({ onNavigate }: AdminProps) {
     setImageFile(null);
     setImagePreviewUrl(null);
     setUploadProgress(null);
+    setProductFormErrors({});
+    setIsSubmitting(false);
     setProductDialogOpen(true);
   }
 
@@ -194,14 +196,16 @@ export default function Admin({ onNavigate }: AdminProps) {
   }
 
   async function submitProduct() {
-    if (
-      !productForm.name ||
-      !productForm.categoryId ||
-      !productForm.pricePerDay
-    ) {
+    const errors: { name?: string; pricePerDay?: string } = {};
+    if (!productForm.name) errors.name = "Product name is required";
+    if (!productForm.pricePerDay) errors.pricePerDay = "Price is required";
+    if (Object.keys(errors).length > 0) {
+      setProductFormErrors(errors);
       toast.error("Please fill in all required fields.");
       return;
     }
+    setProductFormErrors({});
+    setIsSubmitting(true);
     let resolvedImageUrl = editingProduct
       ? (editingProduct.images[0] ?? imgLehenga)
       : imgLehenga;
@@ -213,44 +217,52 @@ export default function Admin({ onNavigate }: AdminProps) {
     if (imageFile) {
       try {
         setUploadProgress(0);
-        const config = await loadConfig();
-        const agentOptions = identity ? { identity } : {};
-        const agent = new HttpAgent({
-          host: config.backend_host,
-          ...agentOptions,
+        resolvedImageUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              // Compress image to max 400px and JPEG quality 0.5 to stay well within ICP message size limits
+              const MAX = 400;
+              let w = img.width;
+              let h = img.height;
+              if (w > MAX || h > MAX) {
+                if (w > h) {
+                  h = Math.round((h * MAX) / w);
+                  w = MAX;
+                } else {
+                  w = Math.round((w * MAX) / h);
+                  h = MAX;
+                }
+              }
+              const canvas = document.createElement("canvas");
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext("2d")!;
+              ctx.drawImage(img, 0, 0, w, h);
+              const compressed = canvas.toDataURL("image/jpeg", 0.5);
+              setUploadProgress(100);
+              resolve(compressed);
+            };
+            img.onerror = () => reject(new Error("Failed to load image"));
+            img.src = e.target?.result as string;
+          };
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsDataURL(imageFile);
         });
-        if (config.backend_host?.includes("localhost")) {
-          await agent.fetchRootKey().catch(() => {});
-        }
-        const storageClient = new StorageClient(
-          config.bucket_name,
-          config.storage_gateway_url,
-          config.backend_canister_id,
-          config.project_id,
-          agent,
-        );
-        const bytes = new Uint8Array(await imageFile.arrayBuffer());
-        const { hash } = await storageClient.putFile(bytes, (pct) =>
-          setUploadProgress(pct),
-        );
-        resolvedImageUrl = await storageClient.getDirectURL(hash);
-        setUploadProgress(100);
       } catch (err) {
-        console.error("Image upload failed:", err);
-        if (!productForm.imageUrl && !editingProduct) {
-          toast.error(
-            "Image upload failed. Please try again or paste an image URL.",
-          );
-          setUploadProgress(null);
-          return;
-        }
+        console.error("Image processing failed:", err);
+        toast.error(
+          "Failed to process image. Please try again or paste an image URL.",
+        );
         setUploadProgress(null);
+        setIsSubmitting(false);
+        return;
       }
     }
 
     const base = {
       name: productForm.name,
-      categoryId: productForm.categoryId,
       pricePerDay: Number(productForm.pricePerDay),
       depositAmount: Number(productForm.depositAmount),
       sizes: productForm.sizes.length ? productForm.sizes : ["Free Size"],
@@ -282,6 +294,8 @@ export default function Admin({ onNavigate }: AdminProps) {
     } catch {
       toast.error("Failed to save product. Please try again.");
       setUploadProgress(null);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -441,11 +455,10 @@ export default function Admin({ onNavigate }: AdminProps) {
   function exportProducts() {
     exportToCSV(
       "radhey-radhey-products",
-      ["ID", "Name", "Category", "Price/Day", "Rating", "Available"],
+      ["ID", "Name", "Price/Day", "Rating", "Available"],
       adminProducts.map((p) => [
         p.id,
         p.name,
-        p.categoryId,
         String(p.pricePerDay),
         String(p.rating),
         p.isAvailable ? "Yes" : "No",
@@ -689,7 +702,6 @@ export default function Admin({ onNavigate }: AdminProps) {
                   <thead className="bg-gray-50 text-xs text-black uppercase">
                     <tr>
                       <th className="text-left px-5 py-3">Product</th>
-                      <th className="text-left px-5 py-3">Category</th>
                       <th className="text-left px-5 py-3">Price/Day</th>
                       <th className="text-left px-5 py-3">Rating</th>
                       <th className="text-left px-5 py-3">Actions</th>
@@ -724,9 +736,6 @@ export default function Admin({ onNavigate }: AdminProps) {
                               {p.name}
                             </span>
                           </div>
-                        </td>
-                        <td className="px-5 py-3 text-sm text-black">
-                          {p.categoryId}
                         </td>
                         <td className="px-5 py-3 text-sm font-medium">
                           \u20b9{p.pricePerDay.toLocaleString()}
@@ -1158,46 +1167,52 @@ export default function Admin({ onNavigate }: AdminProps) {
                   id="prod-name"
                   data-ocid="admin.products.input"
                   value={productForm.name}
-                  onChange={(e) =>
-                    setProductForm((f) => ({ ...f, name: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setProductForm((f) => ({ ...f, name: e.target.value }));
+                    if (productFormErrors.name)
+                      setProductFormErrors((prev) => ({
+                        ...prev,
+                        name: undefined,
+                      }));
+                  }}
                   placeholder="e.g. Crimson Bridal Lehenga"
                 />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="prod-category">Category *</Label>
-                <Input
-                  id="prod-category"
-                  data-ocid="admin.products.category_input"
-                  value={productForm.categoryId}
-                  onChange={(e) =>
-                    setProductForm((f) => ({
-                      ...f,
-                      categoryId: e.target.value,
-                    }))
-                  }
-                  placeholder="e.g. Lehenga, Saree, Sherwani"
-                  className="bg-white text-black border-gray-300"
-                />
+                {productFormErrors.name && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {productFormErrors.name}
+                  </p>
+                )}
               </div>
               <div>
-                <Label htmlFor="prod-price">Price Per Day (\u20b9) *</Label>
+                <Label htmlFor="prod-price">Price Per Day (₹) *</Label>
                 <Input
                   id="prod-price"
                   type="number"
                   min="0"
+                  data-ocid="admin.products.input"
                   value={productForm.pricePerDay}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setProductForm((f) => ({
                       ...f,
                       pricePerDay: e.target.value,
-                    }))
-                  }
-                  placeholder="2500"
+                    }));
+                    if (productFormErrors.pricePerDay)
+                      setProductFormErrors((prev) => ({
+                        ...prev,
+                        pricePerDay: undefined,
+                      }));
+                  }}
+                  placeholder="e.g. 2500"
+                  className="bg-white text-black border-gray-300"
                 />
+                {productFormErrors.pricePerDay && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {productFormErrors.pricePerDay}
+                  </p>
+                )}
               </div>
               <div>
-                <Label htmlFor="prod-deposit">Deposit Amount (\u20b9)</Label>
+                <Label htmlFor="prod-deposit">Deposit Amount (₹)</Label>
                 <Input
                   id="prod-deposit"
                   type="number"
@@ -1209,7 +1224,8 @@ export default function Admin({ onNavigate }: AdminProps) {
                       depositAmount: e.target.value,
                     }))
                   }
-                  placeholder="10000"
+                  placeholder="e.g. 5000"
+                  className="bg-white text-black border-gray-300"
                 />
               </div>
             </div>
@@ -1378,9 +1394,16 @@ export default function Admin({ onNavigate }: AdminProps) {
               data-ocid="admin.products.submit_button"
               onClick={submitProduct}
               className="bg-rose-700 hover:bg-rose-800 text-black"
-              disabled={uploadProgress !== null && uploadProgress < 100}
+              disabled={
+                isSubmitting ||
+                (uploadProgress !== null && uploadProgress < 100)
+              }
             >
-              {editingProduct ? "Save Changes" : "Add Product"}
+              {isSubmitting
+                ? "Saving..."
+                : editingProduct
+                  ? "Save Changes"
+                  : "Add Product"}
             </Button>
           </DialogFooter>
         </DialogContent>

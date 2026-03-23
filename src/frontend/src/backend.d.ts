@@ -56,7 +56,6 @@ export enum UserRole {
 export interface BackendProduct {
     id: string;
     name: string;
-    categoryId: string;
     pricePerDay: number;
     depositAmount: number;
     sizes: Array<string>;
@@ -64,6 +63,10 @@ export interface BackendProduct {
     description: string;
     images: Array<string>;
     isAvailable: boolean;
+    rating: number;
+    reviewCount: number;
+    designerName: string;
+    colors: Array<string>;
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
