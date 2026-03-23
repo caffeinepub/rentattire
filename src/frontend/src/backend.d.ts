@@ -53,6 +53,18 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export interface BackendProduct {
+    id: string;
+    name: string;
+    categoryId: string;
+    pricePerDay: number;
+    depositAmount: number;
+    sizes: Array<string>;
+    occasions: Array<string>;
+    description: string;
+    images: Array<string>;
+    isAvailable: boolean;
+}
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCheckoutSession(items: Array<ShoppingItem>, successUrl: string, cancelUrl: string): Promise<string>;
@@ -62,4 +74,9 @@ export interface backendInterface {
     isStripeConfigured(): Promise<boolean>;
     setStripeConfiguration(config: StripeConfiguration): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
+    addProduct(product: BackendProduct): Promise<boolean>;
+    updateProduct(product: BackendProduct): Promise<boolean>;
+    deleteProduct(id: string): Promise<boolean>;
+    getProducts(): Promise<Array<BackendProduct>>;
+    getProduct(id: string): Promise<BackendProduct | undefined>;
 }

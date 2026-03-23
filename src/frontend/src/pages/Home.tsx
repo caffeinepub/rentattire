@@ -1,42 +1,42 @@
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import img11 from "../assets/1.1.jpeg";
+import img12 from "../assets/1.2.jpeg";
+import img13 from "../assets/1.3.jpeg";
+import img14 from "../assets/1.4.jpeg";
+import img15 from "../assets/1.5.jpeg";
+import logoImg from "../assets/LOGO.jpeg";
 import PetalScene from "../components/PetalScene";
 
 interface HomeProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
 }
 
-const HERO_IMAGES = [
-  "/assets/uploads/1.5-1.jpeg",
-  "/assets/uploads/1.1-3.jpeg",
-  "/assets/uploads/1.4-2.jpeg",
-  "/assets/uploads/1.2-4.jpeg",
-  "/assets/uploads/1.3-5.jpeg",
-];
+const HERO_IMAGES = [img15, img11, img14, img12, img13];
 
 const GALLERY_IMAGES = [
   {
-    src: "/assets/uploads/1.5-1.jpeg",
+    src: img15,
     title: "Moonlit Devotion",
     sub: "Krishna & Radha by the Sacred Lake",
   },
   {
-    src: "/assets/uploads/1.1-3.jpeg",
+    src: img11,
     title: "Rose Petal Love",
     sub: "Golden Lamps & Eternal Devotion",
   },
   {
-    src: "/assets/uploads/1.4-2.jpeg",
+    src: img14,
     title: "Golden Swing",
     sub: "Radha Swings in Divine Grace",
   },
   {
-    src: "/assets/uploads/1.2-4.jpeg",
+    src: img12,
     title: "Temple Offering",
     sub: "Bowing at Sacred Pillars",
   },
   {
-    src: "/assets/uploads/1.3-5.jpeg",
+    src: img13,
     title: "Riverside Peacock",
     sub: "Adorned Feet by Mystic Waters",
   },
@@ -47,21 +47,21 @@ const SERVICES = [
     icon: "🪷",
     title: "Sacred Collections",
     desc: "Luxury attire for divine occasions — weddings, pujas, and sacred ceremonies. Each piece carries the essence of devotion.",
-    image: "/assets/uploads/1.1-3.jpeg",
+    image: img11,
     page: "products",
   },
   {
     icon: "🦚",
     title: "Bridal Blessing",
     desc: "Celestial bridal and ceremony rentals inspired by Radha's divine grace. Step into your most sacred moment.",
-    image: "/assets/uploads/1.4-2.jpeg",
+    image: img14,
     page: "categories",
   },
   {
     icon: "🪔",
     title: "Festival Adornments",
     desc: "Traditional and festive wear that celebrates the vibrant spirit of Indian culture and devotional celebrations.",
-    image: "/assets/uploads/1.2-4.jpeg",
+    image: img12,
     page: "products",
   },
 ];
@@ -303,7 +303,7 @@ export default function Home({ onNavigate }: HomeProps) {
             className="mb-5"
           >
             <img
-              src="/assets/uploads/LOGO-1.jpeg"
+              src={logoImg}
               alt="Radhe Radhe Unique Collection"
               className="h-16 md:h-20 mx-auto rounded-full"
               style={{
@@ -478,7 +478,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 }}
               >
                 <img
-                  src="/assets/uploads/1.5-1.jpeg"
+                  src={img15}
                   alt="Krishna and Radha by the moonlit lake"
                   className="w-full h-[420px] md:h-[500px] object-cover"
                 />

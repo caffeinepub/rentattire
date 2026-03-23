@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logoImg from "../assets/LOGO.jpeg";
 import { useStore } from "../store/useStore";
 
 interface LoginProps {
@@ -35,7 +36,7 @@ export default function Login({ onNavigate }: LoginProps) {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <img
-            src="/assets/uploads/LOGO-1.jpeg"
+            src={logoImg}
             alt="Radhe Radhe Unique Collection"
             className="h-16 w-auto object-contain mx-auto mb-4"
           />

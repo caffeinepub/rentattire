@@ -22,9 +22,11 @@ import {
   BarChart3,
   Download,
   Edit,
+  MessageSquare,
   Package,
   Plus,
   ShoppingBag,
+  Star,
   Tag,
   Trash2,
   Users,
@@ -32,8 +34,8 @@ import {
 import { ImageIcon, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import imgLehenga from "../assets/product-lehenga.jpg";
 import { loadConfig } from "../config";
-import { categories } from "../data/products";
 import type { Product } from "../data/products";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useStore } from "../store/useStore";
@@ -65,9 +67,26 @@ const emptyCouponForm = {
   maxUses: "",
 };
 
+interface AdminReview {
+  id: string;
+  productId: string;
+  productName: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
+const emptyReviewForm = {
+  productId: "",
+  userName: "",
+  rating: 5,
+  comment: "",
+};
+
 export default function Admin({ onNavigate }: AdminProps) {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "bookings" | "users" | "coupons"
+    "overview" | "products" | "bookings" | "users" | "coupons" | "reviews"
   >("overview");
 
   const { identity } = useInternetIdentity();
@@ -80,6 +99,7 @@ export default function Admin({ onNavigate }: AdminProps) {
     addProduct,
     updateProduct,
     deleteProduct,
+    fetchProducts,
     addCoupon,
     updateCoupon,
     deleteCoupon,
@@ -107,6 +127,13 @@ export default function Admin({ onNavigate }: AdminProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reviews state
+  const [adminReviews, setAdminReviews] = useState<AdminReview[]>([]);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [editingReview, setEditingReview] = useState<AdminReview | null>(null);
+  const [reviewForm, setReviewForm] = useState(emptyReviewForm);
+  const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
+
   if (!user || user.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -129,7 +156,7 @@ export default function Admin({ onNavigate }: AdminProps) {
     );
   }
 
-  // ── Product handlers ──────────────────────────────────────────────────────
+  // ── Product handlers ────────────────────────────────────────────────────────────────────────
   function openAddProduct() {
     setEditingProduct(null);
     setProductForm(emptyProductForm);
@@ -176,9 +203,8 @@ export default function Admin({ onNavigate }: AdminProps) {
       return;
     }
     let resolvedImageUrl = editingProduct
-      ? (editingProduct.images[0] ??
-        "/assets/generated/product-lehenga-1.dim_600x800.jpg")
-      : "/assets/generated/product-lehenga-1.dim_600x800.jpg";
+      ? (editingProduct.images[0] ?? imgLehenga)
+      : imgLehenga;
 
     if (productForm.imageUrl) {
       resolvedImageUrl = productForm.imageUrl;
@@ -218,7 +244,6 @@ export default function Admin({ onNavigate }: AdminProps) {
           setUploadProgress(null);
           return;
         }
-        // Fall through to use imageUrl or existing image
         setUploadProgress(null);
       }
     }
@@ -241,28 +266,39 @@ export default function Admin({ onNavigate }: AdminProps) {
       designerName: "",
       colors: [],
     };
-    if (editingProduct) {
-      updateProduct({ ...base, id: editingProduct.id });
-      toast.success("Product updated successfully!");
-    } else {
-      addProduct({ ...base, id: `p${Date.now()}` });
-      toast.success("Product added successfully!");
+    try {
+      if (editingProduct) {
+        await updateProduct({ ...base, id: editingProduct.id });
+        toast.success("Product updated successfully!");
+      } else {
+        await addProduct({ ...base, id: `p${Date.now()}` });
+        toast.success("Product added successfully!");
+      }
+      await fetchProducts();
+      setProductDialogOpen(false);
+      setImageFile(null);
+      setImagePreviewUrl(null);
+      setUploadProgress(null);
+    } catch {
+      toast.error("Failed to save product. Please try again.");
+      setUploadProgress(null);
     }
-    setProductDialogOpen(false);
-    setImageFile(null);
-    setImagePreviewUrl(null);
-    setUploadProgress(null);
   }
 
-  function confirmDeleteProduct() {
+  async function confirmDeleteProduct() {
     if (deleteProductId) {
-      deleteProduct(deleteProductId);
-      setDeleteProductId(null);
-      toast.success("Product deleted.");
+      try {
+        await deleteProduct(deleteProductId);
+        await fetchProducts();
+        setDeleteProductId(null);
+        toast.success("Product deleted.");
+      } catch {
+        toast.error("Failed to delete product. Please try again.");
+      }
     }
   }
 
-  // ── Coupon handlers ───────────────────────────────────────────────────────
+  // ── Coupon handlers ─────────────────────────────────────────────────────────────────────────
   function openAddCoupon() {
     setEditingCoupon(null);
     setCouponForm(emptyCouponForm);
@@ -316,7 +352,62 @@ export default function Admin({ onNavigate }: AdminProps) {
     }
   }
 
-  // ── CSV Export helpers ────────────────────────────────────────────────────
+  // ── Review handlers ─────────────────────────────────────────────────────────────────────────
+  function openAddReview() {
+    setEditingReview(null);
+    setReviewForm(emptyReviewForm);
+    setReviewDialogOpen(true);
+  }
+
+  function openEditReview(r: AdminReview) {
+    setEditingReview(r);
+    setReviewForm({
+      productId: r.productId,
+      userName: r.userName,
+      rating: r.rating,
+      comment: r.comment,
+    });
+    setReviewDialogOpen(true);
+  }
+
+  function submitReview() {
+    if (!reviewForm.productId || !reviewForm.userName || !reviewForm.comment) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    const product = adminProducts.find((p) => p.id === reviewForm.productId);
+    const review: AdminReview = {
+      id: editingReview ? editingReview.id : `rev${Date.now()}`,
+      productId: reviewForm.productId,
+      productName: product?.name ?? reviewForm.productId,
+      userName: reviewForm.userName,
+      rating: reviewForm.rating,
+      comment: reviewForm.comment,
+      date: editingReview
+        ? editingReview.date
+        : new Date().toLocaleDateString("en-IN"),
+    };
+    if (editingReview) {
+      setAdminReviews((prev) =>
+        prev.map((r) => (r.id === editingReview.id ? review : r)),
+      );
+      toast.success("Review updated successfully!");
+    } else {
+      setAdminReviews((prev) => [...prev, review]);
+      toast.success("Review added successfully!");
+    }
+    setReviewDialogOpen(false);
+  }
+
+  function confirmDeleteReview() {
+    if (deleteReviewId) {
+      setAdminReviews((prev) => prev.filter((r) => r.id !== deleteReviewId));
+      setDeleteReviewId(null);
+      toast.success("Review deleted.");
+    }
+  }
+
+  // ── CSV Export helpers ─────────────────────────────────────────────────────────────────────────────
   function exportUsers() {
     exportToCSV(
       "radhey-radhey-users",
@@ -354,7 +445,7 @@ export default function Admin({ onNavigate }: AdminProps) {
       adminProducts.map((p) => [
         p.id,
         p.name,
-        categories.find((c) => c.id === p.categoryId)?.name ?? p.categoryId,
+        p.categoryId,
         String(p.pricePerDay),
         String(p.rating),
         p.isAvailable ? "Yes" : "No",
@@ -379,7 +470,7 @@ export default function Admin({ onNavigate }: AdminProps) {
     toast.success("Coupons exported to CSV.");
   }
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
+  // ── Stats ─────────────────────────────────────────────────────────────────────────────────────
   const totalRevenue = bookings
     .filter((b) => b.status !== "cancelled")
     .reduce((sum, b) => sum + b.totalRental + b.totalDeposit, 0);
@@ -401,10 +492,12 @@ export default function Admin({ onNavigate }: AdminProps) {
     {
       label: "Total Revenue",
       value:
-        totalRevenue === 0 ? "₹0" : `₹${totalRevenue.toLocaleString("en-IN")}`,
+        totalRevenue === 0
+          ? "\u20b90"
+          : `\u20b9${totalRevenue.toLocaleString("en-IN")}`,
       change:
         thisMonthRevenue > 0
-          ? `+₹${thisMonthRevenue.toLocaleString("en-IN")} this month`
+          ? `+\u20b9${thisMonthRevenue.toLocaleString("en-IN")} this month`
           : "No revenue this month",
       icon: BarChart3,
       color: "bg-green-50 text-black",
@@ -453,6 +546,12 @@ export default function Admin({ onNavigate }: AdminProps) {
     },
     { id: "users", label: "Users", icon: Users, ocid: "admin.users.tab" },
     { id: "coupons", label: "Coupons", icon: Tag, ocid: "admin.coupons.tab" },
+    {
+      id: "reviews",
+      label: "Reviews",
+      icon: MessageSquare,
+      ocid: "admin.reviews.tab",
+    },
   ] as const;
 
   return (
@@ -608,60 +707,55 @@ export default function Admin({ onNavigate }: AdminProps) {
                         </td>
                       </tr>
                     )}
-                    {adminProducts.map((p, idx) => {
-                      const cat = categories.find((c) => c.id === p.categoryId);
-                      return (
-                        <tr
-                          key={p.id}
-                          data-ocid={`admin.products.row.${idx + 1}`}
-                          className="hover:bg-gray-50"
-                        >
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={p.images[0]}
-                                alt={p.name}
-                                className="w-10 h-12 object-cover rounded-lg"
-                              />
-                              <span className="text-sm font-medium text-black">
-                                {p.name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-sm text-black">
-                            {cat?.name}
-                          </td>
-                          <td className="px-5 py-3 text-sm font-medium">
-                            \u20b9{p.pricePerDay.toLocaleString()}
-                          </td>
-                          <td className="px-5 py-3 text-sm">
-                            \u2605 {p.rating}
-                          </td>
-                          <td className="px-5 py-3">
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                data-ocid={`admin.products.edit_button.${idx + 1}`}
-                                onClick={() => openEditProduct(p)}
-                                className="p-1.5 text-black hover:text-black"
-                                title="Edit product"
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                data-ocid={`admin.products.delete_button.${idx + 1}`}
-                                onClick={() => setDeleteProductId(p.id)}
-                                className="p-1.5 text-black hover:text-black"
-                                title="Delete product"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {adminProducts.map((p, idx) => (
+                      <tr
+                        key={p.id}
+                        data-ocid={`admin.products.row.${idx + 1}`}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={p.images[0]}
+                              alt={p.name}
+                              className="w-10 h-12 object-cover rounded-lg"
+                            />
+                            <span className="text-sm font-medium text-black">
+                              {p.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-sm text-black">
+                          {p.categoryId}
+                        </td>
+                        <td className="px-5 py-3 text-sm font-medium">
+                          \u20b9{p.pricePerDay.toLocaleString()}
+                        </td>
+                        <td className="px-5 py-3 text-sm">\u2605 {p.rating}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              data-ocid={`admin.products.edit_button.${idx + 1}`}
+                              onClick={() => openEditProduct(p)}
+                              className="p-1.5 text-black hover:text-black"
+                              title="Edit product"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              data-ocid={`admin.products.delete_button.${idx + 1}`}
+                              onClick={() => setDeleteProductId(p.id)}
+                              className="p-1.5 text-black hover:text-black"
+                              title="Delete product"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -941,12 +1035,114 @@ export default function Admin({ onNavigate }: AdminProps) {
             </div>
           </div>
         )}
+
+        {/* Reviews */}
+        {activeTab === "reviews" && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-black">
+                Customer Reviews ({adminReviews.length})
+              </h2>
+              <button
+                type="button"
+                onClick={openAddReview}
+                className="flex items-center gap-2 bg-rose-700 text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-rose-800"
+              >
+                <Plus size={16} /> Add Review
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {adminReviews.length === 0 ? (
+                <div className="p-12 text-center text-black">
+                  <MessageSquare
+                    size={40}
+                    className="mx-auto mb-3 text-gray-300"
+                  />
+                  <p className="font-medium text-black mb-1">No reviews yet.</p>
+                  <p className="text-sm text-gray-500">
+                    Add a review to display on product pages.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 text-xs text-black uppercase">
+                      <tr>
+                        <th className="text-left px-5 py-3">Product</th>
+                        <th className="text-left px-5 py-3">Reviewer</th>
+                        <th className="text-left px-5 py-3">Rating</th>
+                        <th className="text-left px-5 py-3">Comment</th>
+                        <th className="text-left px-5 py-3">Date</th>
+                        <th className="text-left px-5 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {adminReviews.map((r, _i) => (
+                        <tr key={r.id} className="hover:bg-gray-50">
+                          <td className="px-5 py-3 text-sm font-medium text-black">
+                            {r.productName}
+                          </td>
+                          <td className="px-5 py-3 text-sm text-black">
+                            {r.userName}
+                          </td>
+                          <td className="px-5 py-3">
+                            <div className="flex gap-0.5">
+                              {Array.from({ length: 5 }, (_, j) => j).map(
+                                (j) => (
+                                  <Star
+                                    key={j}
+                                    size={12}
+                                    className={
+                                      j < r.rating
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-gray-300"
+                                    }
+                                  />
+                                ),
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-sm text-black max-w-xs truncate">
+                            {r.comment}
+                          </td>
+                          <td className="px-5 py-3 text-sm text-black">
+                            {r.date}
+                          </td>
+                          <td className="px-5 py-3">
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditReview(r)}
+                                className="p-1.5 text-black hover:text-rose-700"
+                                title="Edit review"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteReviewId(r.id)}
+                                className="p-1.5 text-black hover:text-red-600"
+                                title="Delete review"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Product Add/Edit Dialog ── */}
       <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
         <DialogContent
-          className="max-w-lg max-h-[90vh] overflow-y-auto"
+          className="max-w-lg max-h-[90vh] overflow-y-auto bg-white text-gray-900 border border-gray-200 shadow-2xl"
           data-ocid="admin.products.dialog"
         >
           <DialogHeader>
@@ -969,24 +1165,20 @@ export default function Admin({ onNavigate }: AdminProps) {
                 />
               </div>
               <div className="col-span-2">
-                <Label>Category *</Label>
-                <Select
+                <Label htmlFor="prod-category">Category *</Label>
+                <Input
+                  id="prod-category"
+                  data-ocid="admin.products.category_input"
                   value={productForm.categoryId}
-                  onValueChange={(v) =>
-                    setProductForm((f) => ({ ...f, categoryId: v }))
+                  onChange={(e) =>
+                    setProductForm((f) => ({
+                      ...f,
+                      categoryId: e.target.value,
+                    }))
                   }
-                >
-                  <SelectTrigger data-ocid="admin.products.select">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="e.g. Lehenga, Saree, Sherwani"
+                  className="bg-white text-black border-gray-300"
+                />
               </div>
               <div>
                 <Label htmlFor="prod-price">Price Per Day (\u20b9) *</Label>
@@ -1199,7 +1391,10 @@ export default function Admin({ onNavigate }: AdminProps) {
         open={!!deleteProductId}
         onOpenChange={(open) => !open && setDeleteProductId(null)}
       >
-        <DialogContent data-ocid="admin.products.delete.dialog">
+        <DialogContent
+          className="bg-white text-gray-900 border border-gray-200 shadow-2xl"
+          data-ocid="admin.products.delete.dialog"
+        >
           <DialogHeader>
             <DialogTitle>Delete Product</DialogTitle>
           </DialogHeader>
@@ -1228,7 +1423,10 @@ export default function Admin({ onNavigate }: AdminProps) {
 
       {/* ── Coupon Add/Edit Dialog ── */}
       <Dialog open={couponDialogOpen} onOpenChange={setCouponDialogOpen}>
-        <DialogContent data-ocid="admin.coupons.dialog">
+        <DialogContent
+          className="max-w-lg max-h-[90vh] overflow-y-auto bg-white text-gray-900 border border-gray-200 shadow-2xl"
+          data-ocid="admin.coupons.dialog"
+        >
           <DialogHeader>
             <DialogTitle>
               {editingCoupon ? "Edit Coupon" : "Add New Coupon"}
@@ -1263,7 +1461,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                 <SelectTrigger data-ocid="admin.coupons.select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white text-black">
                   <SelectItem value="Percentage">Percentage (%)</SelectItem>
                   <SelectItem value="Fixed">Fixed Amount (\u20b9)</SelectItem>
                 </SelectContent>
@@ -1325,7 +1523,10 @@ export default function Admin({ onNavigate }: AdminProps) {
         open={!!deleteCouponCode}
         onOpenChange={(open) => !open && setDeleteCouponCode(null)}
       >
-        <DialogContent data-ocid="admin.coupons.delete_button">
+        <DialogContent
+          className="bg-white text-gray-900 border border-gray-200 shadow-2xl"
+          data-ocid="admin.coupons.delete_button"
+        >
           <DialogHeader>
             <DialogTitle>Delete Coupon</DialogTitle>
           </DialogHeader>
@@ -1346,6 +1547,117 @@ export default function Admin({ onNavigate }: AdminProps) {
               data-ocid="admin.coupons.confirm_button"
               onClick={confirmDeleteCoupon}
             >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Review Add/Edit Dialog ── */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="max-w-lg bg-white text-gray-900 border border-gray-200 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingReview ? "Edit Review" : "Add New Review"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="review-product">Product *</Label>
+              <select
+                id="review-product"
+                value={reviewForm.productId}
+                onChange={(e) =>
+                  setReviewForm((f) => ({ ...f, productId: e.target.value }))
+                }
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-black bg-white focus:outline-none focus:border-rose-400"
+              >
+                <option value="">Select a product</option>
+                {adminProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="review-username">Reviewer Name *</Label>
+              <Input
+                id="review-username"
+                value={reviewForm.userName}
+                onChange={(e) =>
+                  setReviewForm((f) => ({ ...f, userName: e.target.value }))
+                }
+                placeholder="e.g. Priya Sharma"
+              />
+            </div>
+            <div>
+              <Label>Rating *</Label>
+              <div className="flex gap-2 mt-1">
+                {[1, 2, 3, 4, 5].map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setReviewForm((f) => ({ ...f, rating: r }))}
+                    className={`w-9 h-9 rounded-full border font-bold text-sm transition-colors ${
+                      reviewForm.rating >= r
+                        ? "bg-amber-400 border-amber-400 text-black"
+                        : "border-gray-300 text-black hover:border-amber-400"
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="review-comment">Comment *</Label>
+              <Textarea
+                id="review-comment"
+                value={reviewForm.comment}
+                onChange={(e) =>
+                  setReviewForm((f) => ({ ...f, comment: e.target.value }))
+                }
+                placeholder="Write the review..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReviewDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitReview}
+              className="bg-rose-700 hover:bg-rose-800 text-black"
+            >
+              {editingReview ? "Save Changes" : "Add Review"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Review Delete Confirm ── */}
+      <Dialog
+        open={!!deleteReviewId}
+        onOpenChange={(open) => !open && setDeleteReviewId(null)}
+      >
+        <DialogContent className="bg-white text-gray-900 border border-gray-200 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>Delete Review</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-black">
+            Are you sure you want to delete this review? This action cannot be
+            undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteReviewId(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteReview}>
               Delete
             </Button>
           </DialogFooter>

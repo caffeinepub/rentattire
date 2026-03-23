@@ -1,3 +1,8 @@
+import imgGown from "../assets/product-gown.jpg";
+import imgLehenga from "../assets/product-lehenga.jpg";
+import imgSaree from "../assets/product-saree.jpg";
+import imgSherwani from "../assets/product-sherwani.jpg";
+import imgTuxedo from "../assets/product-tuxedo.jpg";
 export interface Category {
   id: string;
   name: string;
@@ -91,7 +96,7 @@ export const products: Product[] = [
     occasions: ["Wedding", "Engagement"],
     description:
       "Exquisite crimson bridal lehenga with intricate zari embroidery and heavy dupatta. Perfect for your special day.",
-    images: ["/assets/generated/product-lehenga-1.dim_600x800.jpg"],
+    images: [imgLehenga],
     rating: 4.8,
     reviewCount: 124,
     isAvailable: true,
@@ -108,7 +113,7 @@ export const products: Product[] = [
     occasions: ["Party", "Formal", "Award Night"],
     description:
       "Stunning floor-length sapphire evening gown with sequin embellishments. Make a statement at any formal event.",
-    images: ["/assets/generated/product-gown-1.dim_600x800.jpg"],
+    images: [imgGown],
     rating: 4.7,
     reviewCount: 89,
     isAvailable: true,
@@ -125,7 +130,7 @@ export const products: Product[] = [
     occasions: ["Wedding", "Engagement", "Sangeet"],
     description:
       "Magnificent ivory sherwani with gold threadwork embroidery. Regal attire fit for a king on his wedding day.",
-    images: ["/assets/generated/product-sherwani-1.dim_600x800.jpg"],
+    images: [imgSherwani],
     rating: 4.9,
     reviewCount: 156,
     isAvailable: true,
@@ -142,7 +147,7 @@ export const products: Product[] = [
     occasions: ["Formal", "Party", "Corporate"],
     description:
       "Timeless black tuxedo with satin lapels and matching trousers. The epitome of formal elegance.",
-    images: ["/assets/generated/product-tuxedo-1.dim_600x800.jpg"],
+    images: [imgTuxedo],
     rating: 4.6,
     reviewCount: 78,
     isAvailable: true,
@@ -159,7 +164,7 @@ export const products: Product[] = [
     occasions: ["Festival", "Wedding", "Party"],
     description:
       "Luxurious magenta silk saree with golden zari border. Draped elegance for festive occasions.",
-    images: ["/assets/generated/product-saree-1.dim_600x800.jpg"],
+    images: [imgSaree],
     rating: 4.5,
     reviewCount: 92,
     isAvailable: true,
@@ -176,7 +181,7 @@ export const products: Product[] = [
     occasions: ["Wedding", "Festival", "Mehndi"],
     description:
       "Breathtaking emerald green lehenga with floral embroidery and mirror work. A festive delight.",
-    images: ["/assets/generated/product-lehenga-1.dim_600x800.jpg"],
+    images: [imgLehenga],
     rating: 4.7,
     reviewCount: 67,
     isAvailable: true,
@@ -193,7 +198,7 @@ export const products: Product[] = [
     occasions: ["Party", "Formal", "Cocktail"],
     description:
       "Glamorous rose gold gown with beaded bodice and flowing skirt. Perfect for cocktail parties and formal events.",
-    images: ["/assets/generated/product-gown-1.dim_600x800.jpg"],
+    images: [imgGown],
     rating: 4.8,
     reviewCount: 103,
     isAvailable: true,
@@ -210,7 +215,7 @@ export const products: Product[] = [
     occasions: ["Formal", "Corporate", "Wedding"],
     description:
       "Sharp navy blue bandhgala suit with subtle textured fabric. Combines traditional and contemporary aesthetics.",
-    images: ["/assets/generated/product-tuxedo-1.dim_600x800.jpg"],
+    images: [imgTuxedo],
     rating: 4.4,
     reviewCount: 45,
     isAvailable: true,
@@ -227,7 +232,7 @@ export const products: Product[] = [
     occasions: ["Wedding", "Festival", "Puja"],
     description:
       "Authentic Banarasi silk saree with heavy gold zari weave. A timeless heirloom piece for special occasions.",
-    images: ["/assets/generated/product-saree-1.dim_600x800.jpg"],
+    images: [imgSaree],
     rating: 4.9,
     reviewCount: 201,
     isAvailable: true,
@@ -244,7 +249,7 @@ export const products: Product[] = [
     occasions: ["Wedding", "Formal", "Festive"],
     description:
       "Sophisticated navy sherwani paired with matching jodhpuri pants. Ideal for the modern groom.",
-    images: ["/assets/generated/product-sherwani-1.dim_600x800.jpg"],
+    images: [imgSherwani],
     rating: 4.6,
     reviewCount: 58,
     isAvailable: true,
@@ -261,7 +266,7 @@ export const products: Product[] = [
     occasions: ["Wedding", "Party", "Formal"],
     description:
       "Modern white slim-fit tuxedo for grooms who want a contemporary look. Complete with black bow tie.",
-    images: ["/assets/generated/product-tuxedo-1.dim_600x800.jpg"],
+    images: [imgTuxedo],
     rating: 4.5,
     reviewCount: 63,
     isAvailable: true,
@@ -278,7 +283,7 @@ export const products: Product[] = [
     occasions: ["Festival", "Party", "Eid"],
     description:
       "Flowy peach anarkali suit with delicate thread embroidery. Light and elegant for festive celebrations.",
-    images: ["/assets/generated/product-lehenga-1.dim_600x800.jpg"],
+    images: [imgLehenga],
     rating: 4.3,
     reviewCount: 37,
     isAvailable: true,

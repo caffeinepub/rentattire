@@ -1,5 +1,6 @@
 import { Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react";
 import { useState } from "react";
+import logoImg from "../assets/LOGO.jpeg";
 import { useStore } from "../store/useStore";
 
 interface HeaderProps {
@@ -21,7 +22,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border">
+    <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Left Nav - Desktop */}
@@ -34,8 +35,8 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                 data-ocid={`nav.${link.page}_link`}
                 className={`text-xs tracking-widest font-sans-body transition-colors ${
                   currentPage === link.page
-                    ? "text-foreground border-b border-foreground pb-0.5"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-black border-b border-black pb-0.5"
+                    : "text-black hover:text-gray-600"
                 }`}
               >
                 {link.label}
@@ -51,7 +52,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             className="flex-shrink-0 mx-4 md:mx-8"
           >
             <img
-              src="/assets/uploads/LOGO-1.jpeg"
+              src={logoImg}
               alt="Radhe Radhe Unique Collection"
               className="h-12 md:h-16 w-auto object-contain"
             />
@@ -66,8 +67,8 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               data-ocid="nav.contact_link"
               className={`hidden md:block text-xs tracking-widest font-sans-body mr-4 transition-colors ${
                 currentPage === "contact"
-                  ? "text-foreground border-b border-foreground pb-0.5"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-black border-b border-black pb-0.5"
+                  : "text-black hover:text-gray-600"
               }`}
             >
               CONTACT
@@ -76,9 +77,9 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             {/* Search */}
             <div className="relative">
               {searchOpen ? (
-                <div className="flex items-center border-b border-foreground">
+                <div className="flex items-center border-b border-black">
                   <input
-                    className="text-sm outline-none w-32 md:w-48 bg-transparent py-1 font-sans-body"
+                    className="text-sm outline-none w-32 md:w-48 bg-transparent py-1 font-sans-body text-black placeholder-gray-500"
                     placeholder="Search outfits..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -95,7 +96,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                   <button
                     type="button"
                     onClick={() => setSearchOpen(false)}
-                    className="p-1 text-muted-foreground hover:text-foreground"
+                    className="p-1 text-black hover:text-gray-600"
                   >
                     <X size={14} />
                   </button>
@@ -104,7 +105,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-2 text-black hover:text-gray-600 transition-colors"
                   data-ocid="nav.search_button"
                 >
                   <Search size={18} />
@@ -117,11 +118,11 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               type="button"
               onClick={() => onNavigate("wishlist")}
               data-ocid="nav.wishlist_link"
-              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="relative p-2 text-black hover:text-gray-600 transition-colors"
             >
               <Heart size={18} />
               {wishlist.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-foreground text-background text-[10px] w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[10px] w-4 h-4 flex items-center justify-center">
                   {wishlist.length}
                 </span>
               )}
@@ -132,11 +133,11 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               type="button"
               onClick={() => onNavigate("cart")}
               data-ocid="nav.cart_link"
-              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="relative p-2 text-black hover:text-gray-600 transition-colors"
             >
               <ShoppingCart size={18} />
               {cart.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-foreground text-background text-[10px] w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[10px] w-4 h-4 flex items-center justify-center">
                   {cart.length}
                 </span>
               )}
@@ -149,17 +150,17 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   data-ocid="nav.user_button"
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-2 text-black hover:text-gray-600 transition-colors"
                 >
                   <User size={18} />
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-background border border-border shadow-sm z-50">
-                    <div className="px-4 py-3 border-b border-border">
-                      <p className="text-xs text-muted-foreground font-sans-body">
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 shadow-sm z-50">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-xs text-gray-500 font-sans-body">
                         Signed in as
                       </p>
-                      <p className="text-sm font-medium truncate font-sans-body">
+                      <p className="text-sm font-medium truncate font-sans-body text-black">
                         {user.name}
                       </p>
                     </div>
@@ -171,7 +172,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                           setUserMenuOpen(false);
                         }}
                         data-ocid="nav.admin_link"
-                        className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors"
+                        className="w-full text-left px-4 py-2 text-sm font-sans-body text-black hover:bg-gray-100 transition-colors"
                       >
                         Admin Panel
                       </button>
@@ -183,7 +184,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                         setUserMenuOpen(false);
                       }}
                       data-ocid="nav.dashboard_link"
-                      className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm font-sans-body text-black hover:bg-gray-100 transition-colors"
                     >
                       My Bookings
                     </button>
@@ -194,7 +195,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                         setUserMenuOpen(false);
                       }}
                       data-ocid="nav.logout_button"
-                      className="w-full text-left px-4 py-2 text-sm font-sans-body hover:bg-muted transition-colors border-t border-border"
+                      className="w-full text-left px-4 py-2 text-sm font-sans-body text-black hover:bg-gray-100 transition-colors border-t border-gray-200"
                     >
                       Sign Out
                     </button>
@@ -207,7 +208,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 text-muted-foreground hover:text-foreground"
+              className="md:hidden p-2 text-black hover:text-gray-600"
               data-ocid="nav.mobile_menu_button"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -218,7 +219,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="md:hidden border-t border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
             {navLinks.map((link) => (
               <button
@@ -229,7 +230,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                   setMobileOpen(false);
                 }}
                 data-ocid={`nav.mobile.${link.page}_link`}
-                className="block w-full text-left text-xs tracking-widest font-sans-body text-muted-foreground hover:text-foreground py-2 border-b border-border"
+                className="block w-full text-left text-xs tracking-widest font-sans-body text-black hover:text-gray-600 py-2 border-b border-gray-200"
               >
                 {link.label}
               </button>
@@ -242,7 +243,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                     onNavigate("dashboard");
                     setMobileOpen(false);
                   }}
-                  className="block w-full text-left text-xs tracking-widest font-sans-body text-muted-foreground hover:text-foreground py-2 border-b border-border"
+                  className="block w-full text-left text-xs tracking-widest font-sans-body text-black hover:text-gray-600 py-2 border-b border-gray-200"
                 >
                   MY ACCOUNT
                 </button>
@@ -252,7 +253,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                     logout();
                     setMobileOpen(false);
                   }}
-                  className="block w-full text-left text-xs tracking-widest font-sans-body text-muted-foreground hover:text-foreground py-2"
+                  className="block w-full text-left text-xs tracking-widest font-sans-body text-black hover:text-gray-600 py-2"
                 >
                   SIGN OUT
                 </button>

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { products as initialProducts } from "../data/products";
+import { createActorWithConfig } from "../config";
 import type { Product } from "../data/products";
 
 export type { Product };
@@ -116,6 +116,7 @@ interface StoreState {
   adminProducts: Product[];
   adminCoupons: AdminCoupon[];
   registeredUsers: RegisteredUser[];
+  productsLoaded: boolean;
 
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string, size: string) => void;
@@ -132,10 +133,11 @@ interface StoreState {
   applyCoupon: (code: string) => boolean;
   clearCoupon: () => void;
 
-  // Admin product actions
-  addProduct: (product: Product) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: string) => void;
+  // Product actions (backend-aware)
+  fetchProducts: () => Promise<void>;
+  addProduct: (product: Product) => Promise<void>;
+  updateProduct: (product: Product) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
 
   // Admin coupon actions
   addCoupon: (coupon: AdminCoupon) => void;
@@ -149,6 +151,53 @@ const VALID_COUPONS: Record<string, number> = {
   FASHION15: 0.15,
 };
 
+interface ActorWithProducts {
+  getProducts(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      categoryId: string;
+      pricePerDay: number;
+      depositAmount: number;
+      sizes: string[];
+      occasions: string[];
+      description: string;
+      images: string[];
+      isAvailable: boolean;
+    }>
+  >;
+  addProduct(product: {
+    id: string;
+    name: string;
+    categoryId: string;
+    pricePerDay: number;
+    depositAmount: number;
+    sizes: string[];
+    occasions: string[];
+    description: string;
+    images: string[];
+    isAvailable: boolean;
+  }): Promise<boolean>;
+  updateProduct(product: {
+    id: string;
+    name: string;
+    categoryId: string;
+    pricePerDay: number;
+    depositAmount: number;
+    sizes: string[];
+    occasions: string[];
+    description: string;
+    images: string[];
+    isAvailable: boolean;
+  }): Promise<boolean>;
+  deleteProduct(id: string): Promise<boolean>;
+}
+
+// Helper to get anonymous actor for product operations
+async function getActor() {
+  return createActorWithConfig() as unknown as ActorWithProducts;
+}
+
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
@@ -158,9 +207,10 @@ export const useStore = create<StoreState>()(
       bookings: [],
       couponCode: "",
       couponDiscount: 0,
-      adminProducts: initialProducts,
+      adminProducts: [],
       adminCoupons: defaultCoupons,
       registeredUsers: [],
+      productsLoaded: false,
 
       addToCart: (item) =>
         set((state) => {
@@ -241,20 +291,104 @@ export const useStore = create<StoreState>()(
 
       clearCoupon: () => set({ couponCode: "", couponDiscount: 0 }),
 
-      addProduct: (product) =>
-        set((state) => ({ adminProducts: [...state.adminProducts, product] })),
+      fetchProducts: async () => {
+        try {
+          const actor = await getActor();
+          const backendProducts = await actor.getProducts();
+          const products: Product[] = backendProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            designerName: "",
+            categoryId: p.categoryId,
+            pricePerDay: Number(p.pricePerDay),
+            depositAmount: Number(p.depositAmount),
+            sizes: Array.from(p.sizes),
+            colors: [],
+            occasions: Array.from(p.occasions),
+            description: p.description,
+            images: Array.from(p.images),
+            rating: 0,
+            reviewCount: 0,
+            isAvailable: p.isAvailable,
+          }));
+          set({ adminProducts: products, productsLoaded: true });
+        } catch (err) {
+          console.error("Failed to fetch products from backend:", err);
+          set({ productsLoaded: true });
+        }
+      },
 
-      updateProduct: (product) =>
+      addProduct: async (product) => {
+        // Optimistic update
+        set((state) => ({ adminProducts: [...state.adminProducts, product] }));
+        try {
+          const actor = await getActor();
+          await actor.addProduct({
+            id: product.id,
+            name: product.name,
+            categoryId: product.categoryId,
+            pricePerDay: product.pricePerDay,
+            depositAmount: product.depositAmount,
+            sizes: product.sizes,
+            occasions: product.occasions,
+            description: product.description,
+            images: product.images,
+            isAvailable: product.isAvailable,
+          });
+        } catch (err) {
+          console.error("Failed to save product to backend:", err);
+          // Revert optimistic update
+          set((state) => ({
+            adminProducts: state.adminProducts.filter(
+              (p) => p.id !== product.id,
+            ),
+          }));
+          throw err;
+        }
+      },
+
+      updateProduct: async (product) => {
+        const prev = get().adminProducts;
         set((state) => ({
           adminProducts: state.adminProducts.map((p) =>
             p.id === product.id ? product : p,
           ),
-        })),
+        }));
+        try {
+          const actor = await getActor();
+          await actor.updateProduct({
+            id: product.id,
+            name: product.name,
+            categoryId: product.categoryId,
+            pricePerDay: product.pricePerDay,
+            depositAmount: product.depositAmount,
+            sizes: product.sizes,
+            occasions: product.occasions,
+            description: product.description,
+            images: product.images,
+            isAvailable: product.isAvailable,
+          });
+        } catch (err) {
+          console.error("Failed to update product in backend:", err);
+          set({ adminProducts: prev });
+          throw err;
+        }
+      },
 
-      deleteProduct: (id) =>
+      deleteProduct: async (id) => {
+        const prev = get().adminProducts;
         set((state) => ({
           adminProducts: state.adminProducts.filter((p) => p.id !== id),
-        })),
+        }));
+        try {
+          const actor = await getActor();
+          await actor.deleteProduct(id);
+        } catch (err) {
+          console.error("Failed to delete product from backend:", err);
+          set({ adminProducts: prev });
+          throw err;
+        }
+      },
 
       addCoupon: (coupon) =>
         set((state) => ({ adminCoupons: [...state.adminCoupons, coupon] })),
@@ -271,6 +405,19 @@ export const useStore = create<StoreState>()(
           adminCoupons: state.adminCoupons.filter((c) => c.code !== code),
         })),
     }),
-    { name: "rentattire-store" },
+    {
+      name: "rentattire-store",
+      partialize: (state) => ({
+        cart: state.cart,
+        wishlist: state.wishlist,
+        user: state.user,
+        bookings: state.bookings,
+        couponCode: state.couponCode,
+        couponDiscount: state.couponDiscount,
+        adminCoupons: state.adminCoupons,
+        registeredUsers: state.registeredUsers,
+        // Do NOT persist adminProducts -- always fetch fresh from backend
+      }),
+    },
   ),
 );

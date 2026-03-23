@@ -8,11 +8,14 @@ import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
+import FAQ from "./pages/FAQ";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ProductDetail from "./pages/ProductDetail";
 import Products from "./pages/Products";
+import RentalTerms from "./pages/RentalTerms";
 import Wishlist from "./pages/Wishlist";
+import { useStore } from "./store/useStore";
 
 interface RouteState {
   page: string;
@@ -21,16 +24,20 @@ interface RouteState {
 
 export default function App() {
   const [route, setRoute] = useState<RouteState>({ page: "home", params: {} });
+  const fetchProducts = useStore((s) => s.fetchProducts);
+
+  // Fetch products from backend on startup so all users see the same catalog
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const navigate = (page: string, params: Record<string, string> = {}) => {
     setRoute({ page, params });
     window.scrollTo({ top: 0, behavior: "smooth" });
-    // Update URL so the back button and direct links work
     const path = page === "home" ? "/" : `/${page}`;
     window.history.pushState({}, "", path);
   };
 
-  // Handle URL path and hash-based navigation on load
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
     const path = window.location.pathname.replace(/^\//, "").toLowerCase();
@@ -40,7 +47,11 @@ export default function App() {
     } else if (path === "login") {
       setRoute({ page: "login", params: {} });
     } else if (path === "admin") {
-      setRoute({ page: "login", params: {} }); // require login first
+      setRoute({ page: "login", params: {} });
+    } else if (path === "faq") {
+      setRoute({ page: "faq", params: {} });
+    } else if (path === "rental-terms") {
+      setRoute({ page: "rental-terms", params: {} });
     }
   }, []);
 
@@ -84,6 +95,10 @@ export default function App() {
         return <Admin onNavigate={navigate} />;
       case "contact":
         return <Contact />;
+      case "faq":
+        return <FAQ onNavigate={navigate} />;
+      case "rental-terms":
+        return <RentalTerms onNavigate={navigate} />;
       default:
         return <Home onNavigate={navigate} />;
     }
