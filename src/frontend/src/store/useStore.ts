@@ -313,7 +313,7 @@ export const useStore = create<StoreState>()(
       addProduct: async (product) => {
         try {
           const actor = await getActor();
-          await actor.addProduct({
+          const addSuccess = await actor.addProduct({
             id: product.id,
             name: product.name,
             pricePerDay: product.pricePerDay,
@@ -328,6 +328,8 @@ export const useStore = create<StoreState>()(
             designerName: (product as any).designerName ?? "",
             colors: (product as any).colors ?? [],
           });
+          if (!addSuccess)
+            throw new Error("Backend returned false for addProduct");
           // Refresh from canister to confirm sync across all devices
           await get().fetchProducts();
         } catch (err) {
@@ -345,7 +347,7 @@ export const useStore = create<StoreState>()(
         }));
         try {
           const actor = await getActor();
-          await actor.updateProduct({
+          const updateSuccess = await actor.updateProduct({
             id: product.id,
             name: product.name,
             pricePerDay: product.pricePerDay,
@@ -360,6 +362,8 @@ export const useStore = create<StoreState>()(
             designerName: (product as any).designerName ?? "",
             colors: (product as any).colors ?? [],
           });
+          if (!updateSuccess)
+            throw new Error("Backend returned false for updateProduct");
           // Refresh from canister to confirm sync
           await get().fetchProducts();
         } catch (err) {
@@ -376,7 +380,9 @@ export const useStore = create<StoreState>()(
         }));
         try {
           const actor = await getActor();
-          await actor.deleteProduct(id);
+          const deleteSuccess = await actor.deleteProduct(id);
+          if (!deleteSuccess)
+            throw new Error("Backend returned false for deleteProduct");
           // Refresh from canister to confirm sync
           await get().fetchProducts();
         } catch (err) {

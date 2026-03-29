@@ -217,7 +217,7 @@ export default function Admin({ onNavigate }: AdminProps) {
         reader.onload = (e) => {
           const img = new Image();
           img.onload = () => {
-            const MAX = 400;
+            const MAX = 300;
             let w = img.width;
             let h = img.height;
             if (w > MAX || h > MAX) {
@@ -234,7 +234,7 @@ export default function Admin({ onNavigate }: AdminProps) {
             canvas.height = h;
             const ctx = canvas.getContext("2d")!;
             ctx.drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL("image/jpeg", 0.5));
+            resolve(canvas.toDataURL("image/jpeg", 0.35));
           };
           img.onerror = () => reject(new Error("Failed to load image"));
           img.src = e.target?.result as string;
@@ -264,6 +264,16 @@ export default function Admin({ onNavigate }: AdminProps) {
       }
     } else if (productForm.imageUrl) {
       compressedImages = [productForm.imageUrl];
+    }
+
+    // Size guard
+    if (compressedImages.reduce((sum, img) => sum + img.length, 0) > 800000) {
+      toast.error(
+        "Images are too large. Please use smaller images or paste image URLs instead.",
+      );
+      setUploadProgress(null);
+      setIsSubmitting(false);
+      return;
     }
 
     // Merge with existing images, excluding removed ones
@@ -310,7 +320,8 @@ export default function Admin({ onNavigate }: AdminProps) {
       setImagePreviews([]);
       setRemovedExistingImages([]);
       setUploadProgress(null);
-    } catch {
+    } catch (err) {
+      console.error("Product save error:", err);
       toast.error("Failed to save product. Please try again.");
       setUploadProgress(null);
     } finally {
