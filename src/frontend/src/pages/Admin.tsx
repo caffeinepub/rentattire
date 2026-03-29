@@ -116,8 +116,11 @@ export default function Admin({ onNavigate }: AdminProps) {
   const [deleteCouponCode, setDeleteCouponCode] = useState<string | null>(null);
 
   // Image upload state
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [removedExistingImages, setRemovedExistingImages] = useState<string[]>(
+    [],
+  );
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [productFormErrors, setProductFormErrors] = useState<{
     name?: string;
@@ -159,8 +162,9 @@ export default function Admin({ onNavigate }: AdminProps) {
   function openAddProduct() {
     setEditingProduct(null);
     setProductForm(emptyProductForm);
-    setImageFile(null);
-    setImagePreviewUrl(null);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setRemovedExistingImages([]);
     setUploadProgress(null);
     setProductFormErrors({});
     setIsSubmitting(false);
@@ -178,8 +182,9 @@ export default function Admin({ onNavigate }: AdminProps) {
       description: p.description,
       imageUrl: p.images[0] ?? "",
     });
-    setImageFile(null);
-    setImagePreviewUrl(null);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setRemovedExistingImages([]);
     setUploadProgress(null);
     setProductFormErrors({});
     setIsSubmitting(false);
@@ -206,50 +211,48 @@ export default function Admin({ onNavigate }: AdminProps) {
     }
     setProductFormErrors({});
     setIsSubmitting(true);
-    let resolvedImageUrl = editingProduct
-      ? (editingProduct.images[0] ?? imgLehenga)
-      : imgLehenga;
-
-    if (productForm.imageUrl) {
-      resolvedImageUrl = productForm.imageUrl;
+    async function compressFile(file: File): Promise<string> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 400;
+            let w = img.width;
+            let h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) {
+                h = Math.round((h * MAX) / w);
+                w = MAX;
+              } else {
+                w = Math.round((w * MAX) / h);
+                h = MAX;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d")!;
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL("image/jpeg", 0.5));
+          };
+          img.onerror = () => reject(new Error("Failed to load image"));
+          img.src = e.target?.result as string;
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
     }
 
-    if (imageFile) {
+    let compressedImages: string[] = [];
+    if (imageFiles.length > 0) {
       try {
         setUploadProgress(0);
-        resolvedImageUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-              // Compress image to max 400px and JPEG quality 0.5 to stay well within ICP message size limits
-              const MAX = 400;
-              let w = img.width;
-              let h = img.height;
-              if (w > MAX || h > MAX) {
-                if (w > h) {
-                  h = Math.round((h * MAX) / w);
-                  w = MAX;
-                } else {
-                  w = Math.round((w * MAX) / h);
-                  h = MAX;
-                }
-              }
-              const canvas = document.createElement("canvas");
-              canvas.width = w;
-              canvas.height = h;
-              const ctx = canvas.getContext("2d")!;
-              ctx.drawImage(img, 0, 0, w, h);
-              const compressed = canvas.toDataURL("image/jpeg", 0.5);
-              setUploadProgress(100);
-              resolve(compressed);
-            };
-            img.onerror = () => reject(new Error("Failed to load image"));
-            img.src = e.target?.result as string;
-          };
-          reader.onerror = () => reject(new Error("Failed to read file"));
-          reader.readAsDataURL(imageFile);
-        });
+        for (let i = 0; i < imageFiles.length; i++) {
+          const compressed = await compressFile(imageFiles[i]);
+          compressedImages.push(compressed);
+          setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100));
+        }
       } catch (err) {
         console.error("Image processing failed:", err);
         toast.error(
@@ -259,7 +262,22 @@ export default function Admin({ onNavigate }: AdminProps) {
         setIsSubmitting(false);
         return;
       }
+    } else if (productForm.imageUrl) {
+      compressedImages = [productForm.imageUrl];
     }
+
+    // Merge with existing images, excluding removed ones
+    const existingImages = editingProduct
+      ? editingProduct.images.filter(
+          (img) => !removedExistingImages.includes(img),
+        )
+      : [];
+    const finalImages =
+      compressedImages.length > 0
+        ? [...compressedImages, ...existingImages]
+        : existingImages.length > 0
+          ? existingImages
+          : [imgLehenga];
 
     const base = {
       name: productForm.name,
@@ -271,7 +289,7 @@ export default function Admin({ onNavigate }: AdminProps) {
         .map((s) => s.trim())
         .filter(Boolean),
       description: productForm.description,
-      images: [resolvedImageUrl],
+      images: finalImages,
       rating: 4.5,
       reviewCount: 0,
       isAvailable: true,
@@ -288,8 +306,9 @@ export default function Admin({ onNavigate }: AdminProps) {
       }
       await fetchProducts();
       setProductDialogOpen(false);
-      setImageFile(null);
-      setImagePreviewUrl(null);
+      setImageFiles([]);
+      setImagePreviews([]);
+      setRemovedExistingImages([]);
       setUploadProgress(null);
     } catch {
       toast.error("Failed to save product. Please try again.");
@@ -1281,94 +1300,169 @@ export default function Admin({ onNavigate }: AdminProps) {
           {/* Image Upload Section */}
           <div className="space-y-2">
             <Label>
-              Product Image{" "}
+              Product Images{" "}
               {!editingProduct && <span className="text-black">*</span>}
             </Label>
-            <label
-              htmlFor="prod-image-upload"
-              data-ocid="admin.product.dropzone"
-              className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors block ${
-                imagePreviewUrl
-                  ? "border-rose-300 bg-rose-50"
-                  : "border-gray-300 hover:border-rose-400 hover:bg-rose-50/30"
-              }`}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const file = e.dataTransfer.files[0];
-                if (file?.type.startsWith("image/")) {
-                  setImageFile(file);
-                  setImagePreviewUrl(URL.createObjectURL(file));
-                  setUploadProgress(null);
-                }
-              }}
-            >
-              <input
-                ref={fileInputRef}
-                id="prod-image-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                data-ocid="admin.product.upload_button"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setImageFile(file);
-                    setImagePreviewUrl(URL.createObjectURL(file));
+
+            {/* Existing images when editing */}
+            {editingProduct &&
+              editingProduct.images.filter(
+                (img) => !removedExistingImages.includes(img),
+              ).length > 0 &&
+              imagePreviews.length === 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Current images — click ✕ to remove
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {editingProduct.images
+                      .filter((img) => !removedExistingImages.includes(img))
+                      .map((img) => (
+                        <div key={img} className="relative group">
+                          <img
+                            src={img}
+                            alt="Product"
+                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRemovedExistingImages((prev) => [...prev, img])
+                            }
+                            className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+            {/* New image previews grid */}
+            {imagePreviews.length > 0 && (
+              <div>
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {imagePreviews.map((preview, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: preview order is stable
+                    <div key={i} className="relative group">
+                      <img
+                        src={preview}
+                        alt="Preview"
+                        className="w-full h-24 object-cover rounded-lg shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFiles((prev) =>
+                            prev.filter((_, idx) => idx !== i),
+                          );
+                          setImagePreviews((prev) =>
+                            prev.filter((_, idx) => idx !== i),
+                          );
+                        }}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {/* Add more images button */}
+                <label
+                  htmlFor="prod-image-upload"
+                  data-ocid="admin.product.dropzone"
+                  className="flex items-center gap-2 border border-dashed border-rose-300 rounded-lg px-3 py-2 text-sm text-rose-700 cursor-pointer hover:bg-rose-50 transition-colors"
+                >
+                  <ImageIcon size={14} />
+                  Add more images
+                  <input
+                    ref={fileInputRef}
+                    id="prod-image-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    data-ocid="admin.product.upload_button"
+                    onChange={(e) => {
+                      const newFiles = Array.from(e.target.files ?? []);
+                      setImageFiles((prev) => [...prev, ...newFiles]);
+                      setImagePreviews((prev) => [
+                        ...prev,
+                        ...newFiles.map((f) => URL.createObjectURL(f)),
+                      ]);
+                      setUploadProgress(null);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* Initial dropzone (no previews yet) */}
+            {imagePreviews.length === 0 && (
+              <label
+                htmlFor="prod-image-upload"
+                data-ocid="admin.product.dropzone"
+                className="relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors block border-gray-300 hover:border-rose-400 hover:bg-rose-50/30"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const newFiles = Array.from(e.dataTransfer.files).filter(
+                    (f) => f.type.startsWith("image/"),
+                  );
+                  if (newFiles.length > 0) {
+                    setImageFiles((prev) => [...prev, ...newFiles]);
+                    setImagePreviews((prev) => [
+                      ...prev,
+                      ...newFiles.map((f) => URL.createObjectURL(f)),
+                    ]);
                     setUploadProgress(null);
                   }
                 }}
-              />
-              {imagePreviewUrl ? (
-                <div
-                  data-ocid="admin.product.success_state"
-                  className="space-y-2"
-                >
-                  <img
-                    src={imagePreviewUrl}
-                    alt="Preview"
-                    className="mx-auto h-32 w-32 object-cover rounded-lg shadow-sm"
-                  />
-                  <p className="text-xs text-black font-medium">
-                    {imageFile ? imageFile.name : "Current image"} — click to
-                    change
-                  </p>
-                </div>
-              ) : editingProduct?.images[0] ? (
-                <div
-                  data-ocid="admin.product.success_state"
-                  className="space-y-2"
-                >
-                  <img
-                    src={editingProduct.images[0]}
-                    alt="Current"
-                    className="mx-auto h-32 w-32 object-cover rounded-lg shadow-sm"
-                  />
-                  <p className="text-xs text-black">
-                    Current image — click to replace
-                  </p>
-                </div>
-              ) : (
+              >
+                <input
+                  ref={fileInputRef}
+                  id="prod-image-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  data-ocid="admin.product.upload_button"
+                  onChange={(e) => {
+                    const newFiles = Array.from(e.target.files ?? []);
+                    setImageFiles((prev) => [...prev, ...newFiles]);
+                    setImagePreviews((prev) => [
+                      ...prev,
+                      ...newFiles.map((f) => URL.createObjectURL(f)),
+                    ]);
+                    setUploadProgress(null);
+                    e.target.value = "";
+                  }}
+                />
                 <div className="space-y-2 py-4">
                   <div className="mx-auto w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
                     <Upload className="w-5 h-5 text-black" />
                   </div>
                   <p className="text-sm font-medium text-black">
-                    Click to upload or drag & drop
+                    Click to upload or drag & drop multiple images
                   </p>
                   <p className="text-xs text-black">
-                    PNG, JPG, WEBP up to 10MB
+                    PNG, JPG, WEBP — select multiple
                   </p>
                 </div>
-              )}
-            </label>
+              </label>
+            )}
+
             {uploadProgress !== null && (
               <div
                 data-ocid="admin.product.loading_state"
                 className="space-y-1"
               >
                 <div className="flex justify-between text-xs text-black">
-                  <span>Uploading image\u2026</span>
+                  <span>Processing images…</span>
                   <span>{Math.round(uploadProgress)}%</span>
                 </div>
                 <Progress

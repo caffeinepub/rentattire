@@ -26,12 +26,12 @@ export default function App() {
   const [route, setRoute] = useState<RouteState>({ page: "home", params: {} });
   const fetchProducts = useStore((s) => s.fetchProducts);
 
-  // Fetch products from backend on startup and poll every 30s for live updates
+  // Fetch products from backend on startup and poll every 15s for live updates
   useEffect(() => {
     fetchProducts();
     const interval = setInterval(() => {
       fetchProducts();
-    }, 30000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [fetchProducts]);
 

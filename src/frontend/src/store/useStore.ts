@@ -306,12 +306,11 @@ export const useStore = create<StoreState>()(
         } catch (err) {
           console.error("Failed to fetch products from backend:", err);
           set({ productsLoaded: true });
+          throw err;
         }
       },
 
       addProduct: async (product) => {
-        // Optimistic update
-        set((state) => ({ adminProducts: [...state.adminProducts, product] }));
         try {
           const actor = await getActor();
           await actor.addProduct({
@@ -329,14 +328,10 @@ export const useStore = create<StoreState>()(
             designerName: (product as any).designerName ?? "",
             colors: (product as any).colors ?? [],
           });
+          // Refresh from canister to confirm sync across all devices
+          await get().fetchProducts();
         } catch (err) {
           console.error("Failed to save product to backend:", err);
-          // Revert optimistic update
-          set((state) => ({
-            adminProducts: state.adminProducts.filter(
-              (p) => p.id !== product.id,
-            ),
-          }));
           throw err;
         }
       },
@@ -365,6 +360,8 @@ export const useStore = create<StoreState>()(
             designerName: (product as any).designerName ?? "",
             colors: (product as any).colors ?? [],
           });
+          // Refresh from canister to confirm sync
+          await get().fetchProducts();
         } catch (err) {
           console.error("Failed to update product in backend:", err);
           set({ adminProducts: prev });
@@ -380,6 +377,8 @@ export const useStore = create<StoreState>()(
         try {
           const actor = await getActor();
           await actor.deleteProduct(id);
+          // Refresh from canister to confirm sync
+          await get().fetchProducts();
         } catch (err) {
           console.error("Failed to delete product from backend:", err);
           set({ adminProducts: prev });

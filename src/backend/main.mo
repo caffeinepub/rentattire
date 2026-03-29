@@ -11,7 +11,7 @@ actor {
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  // ── Legacy type (kept for stable variable migration) ─────────────────────────
+  // ── Legacy type — kept for stable variable migration compatibility ────────
   type ProductV1 = {
     id : Text;
     name : Text;
@@ -25,7 +25,7 @@ actor {
     isAvailable : Bool;
   };
 
-  // ── Current product type ───────────────────────────────────────────────
+  // ── Current product type ─────────────────────────────────────────────
   type Product = {
     id : Text;
     name : Text;
@@ -42,57 +42,83 @@ actor {
     colors : [Text];
   };
 
-  // Legacy map kept so the runtime can drop it cleanly on upgrade
+  // ── Legacy maps — kept with original types so upgrade checker is satisfied ──
+  // These match what was in the previously deployed canister exactly.
+  // They will be empty in production (were `let`, not `stable var` before),
+  // but must be declared here to allow the canister upgrade to proceed.
   let productMap : Map.Map<Text, ProductV1> = Map.empty();
-
-  // Current product storage
   let productMapV2 : Map.Map<Text, Product> = Map.empty();
+
+  // ── New stable storage — survives all future upgrades ──────────────────
+  stable var productEntries : [(Text, Product)] = [];
+
+  // ── In-memory working map, seeded from stable storage on startup ───────
+  let activeProducts : Map.Map<Text, Product> = do {
+    let m = Map.empty<Text, Product>();
+    // One-time migration: if productMapV2 has data, bring it over
+    for ((k, v) in productMapV2.entries().toArray().vals()) {
+      m.add(k, v);
+    };
+    // Normal restore: load from stable productEntries
+    for ((k, v) in productEntries.vals()) {
+      m.add(k, v);
+    };
+    m
+  };
+
+  // Persist working map to stable storage before every upgrade
+  system func preupgrade() {
+    productEntries := activeProducts.entries().toArray();
+  };
 
   // ── Product CRUD ──────────────────────────────────────────────────────────
   public shared ({ caller = _ }) func addProduct(product : Product) : async Bool {
-    productMapV2.add(product.id, product);
-    true;
+    activeProducts.add(product.id, product);
+    productEntries := activeProducts.entries().toArray();
+    true
   };
 
   public shared ({ caller = _ }) func updateProduct(product : Product) : async Bool {
-    switch (productMapV2.get(product.id)) {
+    switch (activeProducts.get(product.id)) {
       case null false;
       case _ {
-        productMapV2.add(product.id, product);
-        true;
+        activeProducts.add(product.id, product);
+        productEntries := activeProducts.entries().toArray();
+        true
       };
-    };
+    }
   };
 
   public shared ({ caller = _ }) func deleteProduct(id : Text) : async Bool {
-    productMapV2.remove(id);
-    true;
+    activeProducts.remove(id);
+    productEntries := activeProducts.entries().toArray();
+    true
   };
 
   public query func getProducts() : async [Product] {
-    productMapV2.values().toArray();
+    activeProducts.values().toArray()
   };
 
   public query func getProduct(id : Text) : async ?Product {
-    productMapV2.get(id);
+    activeProducts.get(id)
   };
 
   // ── Stripe ───────────────────────────────────────────────────────────────
   public query func isStripeConfigured() : async Bool {
-    false;
+    false
   };
 
   public shared ({ caller = _ }) func setStripeConfiguration(_ : Stripe.StripeConfiguration) : async () { () };
 
   public func getStripeSessionStatus(_ : Text) : async Stripe.StripeSessionStatus {
-    #failed { error = "Not available for testing" };
+    #failed { error = "Not available for testing" }
   };
 
   public shared ({ caller = _ }) func createCheckoutSession(_ : [Stripe.ShoppingItem], _ : Text, _ : Text) : async Text {
-    "Not available for testing";
+    "Not available for testing"
   };
 
   public query func transform(input : OutCall.TransformationInput) : async OutCall.TransformationOutput {
-    OutCall.transform(input);
+    OutCall.transform(input)
   };
 };

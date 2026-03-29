@@ -1,5 +1,5 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import { useStore } from "../store/useStore";
 
@@ -20,7 +20,7 @@ const allOccasions = [
 ];
 
 export default function Products({ onNavigate, initialSearch }: ProductsProps) {
-  const { adminProducts } = useStore();
+  const { adminProducts, fetchProducts, productsLoaded } = useStore();
   const [search, setSearch] = useState(initialSearch || "");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
@@ -29,6 +29,10 @@ export default function Products({ onNavigate, initialSearch }: ProductsProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const perPage = 12;
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const toggle = (
     arr: string[],
@@ -74,6 +78,20 @@ export default function Products({ onNavigate, initialSearch }: ProductsProps) {
 
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
   const totalPages = Math.ceil(filtered.length / perPage);
+
+  if (!productsLoaded) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        data-ocid="products.loading_state"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading collection...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,20 +271,24 @@ export default function Products({ onNavigate, initialSearch }: ProductsProps) {
               No pieces found
             </p>
             <p className="text-sm text-muted-foreground font-sans-body mb-6">
-              Try adjusting your filters or search term.
+              {adminProducts.length === 0
+                ? "No products have been added yet. Check back soon!"
+                : "Try adjusting your filters or search term."}
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setSelectedSizes([]);
-                setSelectedOccasions([]);
-                setPriceRange([0, 3000]);
-              }}
-              className="border border-foreground text-foreground px-6 py-2 text-xs tracking-widest font-sans-body hover:bg-foreground hover:text-background transition-colors"
-            >
-              CLEAR FILTERS
-            </button>
+            {adminProducts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setSelectedSizes([]);
+                  setSelectedOccasions([]);
+                  setPriceRange([0, 3000]);
+                }}
+                className="border border-foreground text-foreground px-6 py-2 text-xs tracking-widest font-sans-body hover:bg-foreground hover:text-background transition-colors"
+              >
+                CLEAR FILTERS
+              </button>
+            )}
           </div>
         ) : (
           <>
