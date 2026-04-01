@@ -146,6 +146,21 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export interface BackendProduct {
+    id: string;
+    name: string;
+    pricePerDay: number;
+    depositAmount: number;
+    sizes: Array<string>;
+    occasions: Array<string>;
+    description: string;
+    images: Array<string>;
+    isAvailable: boolean;
+    rating: number;
+    reviewCount: number;
+    designerName: string;
+    colors: Array<string>;
+}
 export interface backendInterface {
     _caffeineStorageBlobIsLive(hash: Uint8Array): Promise<boolean>;
     _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>>;
@@ -162,6 +177,11 @@ export interface backendInterface {
     isStripeConfigured(): Promise<boolean>;
     setStripeConfiguration(config: StripeConfiguration): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
+    addProduct(product: BackendProduct): Promise<boolean>;
+    updateProduct(product: BackendProduct): Promise<boolean>;
+    deleteProduct(id: string): Promise<boolean>;
+    getProducts(): Promise<Array<BackendProduct>>;
+    getProduct(id: string): Promise<BackendProduct | undefined>;
 }
 import type { StripeSessionStatus as _StripeSessionStatus, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -374,6 +394,69 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.transform(arg0);
             return result;
+        }
+    }
+    async addProduct(product: BackendProduct): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addProduct(product as any);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            return await this.actor.addProduct(product as any);
+        }
+    }
+    async updateProduct(product: BackendProduct): Promise<boolean> {
+        if (this.processError) {
+            try {
+                return await this.actor.updateProduct(product as any);
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            return await this.actor.updateProduct(product as any);
+        }
+    }
+    async deleteProduct(id: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                return await this.actor.deleteProduct(id);
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            return await this.actor.deleteProduct(id);
+        }
+    }
+    async getProducts(): Promise<Array<BackendProduct>> {
+        if (this.processError) {
+            try {
+                return await this.actor.getProducts() as unknown as Array<BackendProduct>;
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            return await this.actor.getProducts() as unknown as Array<BackendProduct>;
+        }
+    }
+    async getProduct(id: string): Promise<BackendProduct | undefined> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getProduct(id);
+                return result.length > 0 ? result[0] as unknown as BackendProduct : undefined;
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            const result = await this.actor.getProduct(id);
+            return result.length > 0 ? result[0] as unknown as BackendProduct : undefined;
         }
     }
 }

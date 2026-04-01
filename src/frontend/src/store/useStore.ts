@@ -1,9 +1,7 @@
-import { Actor, HttpAgent } from "@icp-sdk/core/agent";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { loadConfig } from "../config";
+import { createActorWithConfig } from "../config";
 import type { Product } from "../data/products";
-import { idlFactory } from "../declarations/backend.did";
 
 export type { Product };
 
@@ -153,42 +151,6 @@ const VALID_COUPONS: Record<string, number> = {
   FASHION15: 0.15,
 };
 
-interface BackendProductRecord {
-  id: string;
-  name: string;
-  pricePerDay: number;
-  depositAmount: number;
-  sizes: string[];
-  occasions: string[];
-  description: string;
-  images: string[];
-  isAvailable: boolean;
-  rating: number;
-  reviewCount: number;
-  designerName: string;
-  colors: string[];
-}
-
-interface ActorWithProducts {
-  getProducts(): Promise<Array<BackendProductRecord>>;
-  addProduct(product: BackendProductRecord): Promise<boolean>;
-  updateProduct(product: BackendProductRecord): Promise<boolean>;
-  deleteProduct(id: string): Promise<boolean>;
-}
-
-// Helper to get a raw ICP actor that includes all product methods
-async function getActor(): Promise<ActorWithProducts> {
-  const config = await loadConfig();
-  const agent = new HttpAgent({ host: config.backend_host });
-  if (config.backend_host?.includes("localhost")) {
-    await agent.fetchRootKey().catch(() => {});
-  }
-  return Actor.createActor(idlFactory, {
-    agent,
-    canisterId: config.backend_canister_id,
-  }) as unknown as ActorWithProducts;
-}
-
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
@@ -284,7 +246,7 @@ export const useStore = create<StoreState>()(
 
       fetchProducts: async () => {
         try {
-          const actor = await getActor();
+          const actor = await createActorWithConfig();
           const backendProducts = await actor.getProducts();
           const products: Product[] = backendProducts.map((p) => ({
             id: p.id,
@@ -312,7 +274,7 @@ export const useStore = create<StoreState>()(
 
       addProduct: async (product) => {
         try {
-          const actor = await getActor();
+          const actor = await createActorWithConfig();
           const addSuccess = await actor.addProduct({
             id: product.id,
             name: product.name,
@@ -346,7 +308,7 @@ export const useStore = create<StoreState>()(
           ),
         }));
         try {
-          const actor = await getActor();
+          const actor = await createActorWithConfig();
           const updateSuccess = await actor.updateProduct({
             id: product.id,
             name: product.name,
@@ -379,7 +341,7 @@ export const useStore = create<StoreState>()(
           adminProducts: state.adminProducts.filter((p) => p.id !== id),
         }));
         try {
-          const actor = await getActor();
+          const actor = await createActorWithConfig();
           const deleteSuccess = await actor.deleteProduct(id);
           if (!deleteSuccess)
             throw new Error("Backend returned false for deleteProduct");

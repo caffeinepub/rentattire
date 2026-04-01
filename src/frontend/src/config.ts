@@ -177,3 +177,17 @@ export async function createActorWithConfig(
     actorOptions,
   );
 }
+
+export async function createStorageClientInstance(): Promise<StorageClient> {
+  const config = await loadConfig();
+  const agent = await HttpAgent.create({
+    host: config.backend_host ?? "https://ic0.app",
+  });
+  return new StorageClient(
+    config.bucket_name,
+    config.storage_gateway_url,
+    config.backend_canister_id,
+    config.project_id,
+    agent,
+  );
+}

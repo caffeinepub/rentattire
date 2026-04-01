@@ -34,6 +34,7 @@ import { ImageIcon, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import imgLehenga from "../assets/product-lehenga.jpg";
+import { createStorageClientInstance } from "../config";
 import type { Product } from "../data/products";
 import { useStore } from "../store/useStore";
 import type { AdminCoupon } from "../store/useStore";
@@ -211,37 +212,46 @@ export default function Admin({ onNavigate }: AdminProps) {
     }
     setProductFormErrors({});
     setIsSubmitting(true);
-    async function compressFile(file: File): Promise<string> {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const MAX = 300;
-            let w = img.width;
-            let h = img.height;
-            if (w > MAX || h > MAX) {
-              if (w > h) {
-                h = Math.round((h * MAX) / w);
-                w = MAX;
-              } else {
-                w = Math.round((w * MAX) / h);
-                h = MAX;
+    // Upload images to blob storage, fall back to base64 if unavailable
+    async function uploadImageFile(file: File): Promise<string> {
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const storageClient = await createStorageClientInstance();
+        const { hash } = await storageClient.putFile(bytes, () => {});
+        const url = await storageClient.getDirectURL(hash);
+        return url;
+      } catch {
+        // Fallback: compress to base64
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const MAX = 400;
+              let w = img.width;
+              let h = img.height;
+              if (w > MAX || h > MAX) {
+                if (w > h) {
+                  h = Math.round((h * MAX) / w);
+                  w = MAX;
+                } else {
+                  w = Math.round((w * MAX) / h);
+                  h = MAX;
+                }
               }
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext("2d")!;
-            ctx.drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL("image/jpeg", 0.35));
+              const canvas = document.createElement("canvas");
+              canvas.width = w;
+              canvas.height = h;
+              canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL("image/jpeg", 0.5));
+            };
+            img.onerror = () => reject(new Error("Failed to load image"));
+            img.src = e.target?.result as string;
           };
-          img.onerror = () => reject(new Error("Failed to load image"));
-          img.src = e.target?.result as string;
-        };
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(file);
-      });
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsDataURL(file);
+        });
+      }
     }
 
     let compressedImages: string[] = [];
@@ -249,14 +259,14 @@ export default function Admin({ onNavigate }: AdminProps) {
       try {
         setUploadProgress(0);
         for (let i = 0; i < imageFiles.length; i++) {
-          const compressed = await compressFile(imageFiles[i]);
-          compressedImages.push(compressed);
+          const url = await uploadImageFile(imageFiles[i]);
+          compressedImages.push(url);
           setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100));
         }
       } catch (err) {
-        console.error("Image processing failed:", err);
+        console.error("Image upload failed:", err);
         toast.error(
-          "Failed to process image. Please try again or paste an image URL.",
+          "Failed to upload image. Please try again or paste an image URL.",
         );
         setUploadProgress(null);
         setIsSubmitting(false);
@@ -264,16 +274,6 @@ export default function Admin({ onNavigate }: AdminProps) {
       }
     } else if (productForm.imageUrl) {
       compressedImages = [productForm.imageUrl];
-    }
-
-    // Size guard
-    if (compressedImages.reduce((sum, img) => sum + img.length, 0) > 800000) {
-      toast.error(
-        "Images are too large. Please use smaller images or paste image URLs instead.",
-      );
-      setUploadProgress(null);
-      setIsSubmitting(false);
-      return;
     }
 
     // Merge with existing images, excluding removed ones
@@ -322,7 +322,8 @@ export default function Admin({ onNavigate }: AdminProps) {
       setUploadProgress(null);
     } catch (err) {
       console.error("Product save error:", err);
-      toast.error("Failed to save product. Please try again.");
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to save product: ${msg.slice(0, 120)}`);
       setUploadProgress(null);
     } finally {
       setIsSubmitting(false);

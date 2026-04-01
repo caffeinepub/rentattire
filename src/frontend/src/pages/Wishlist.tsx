@@ -1,5 +1,5 @@
+import { useEffect } from "react";
 import ProductCard from "../components/ProductCard";
-import { products } from "../data/products";
 import { useStore } from "../store/useStore";
 
 interface WishlistProps {
@@ -7,8 +7,27 @@ interface WishlistProps {
 }
 
 export default function Wishlist({ onNavigate }: WishlistProps) {
-  const { wishlist } = useStore();
-  const wishlistProducts = products.filter((p) => wishlist.includes(p.id));
+  const { wishlist, adminProducts, fetchProducts, productsLoaded } = useStore();
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const wishlistProducts = adminProducts.filter((p) => wishlist.includes(p.id));
+
+  if (!productsLoaded) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        data-ocid="wishlist.loading_state"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading wishlist...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
